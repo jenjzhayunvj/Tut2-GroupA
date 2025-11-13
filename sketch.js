@@ -4,33 +4,29 @@
 let max_height, max_width;
 
 function setup() {
+  // Draw background once so the canvas isn't empty
   // Setting max height and width for responsive design
-  max_height = windowHeight;
-  max_width = windowWidth;
-  createCanvas(max_width, max_height);
+  maxHeight = windowHeight;
+  maxWidth = windowWidth;
 
   stroke("#BC7653");
   strokeWeight(1);
-  noLoop();
   randomSeed(1);
-}
 
-function draw() {  
-  // ================= 背景三角形 =================
+  createCanvas(maxWidth, maxHeight);
+  bg = createGraphics(maxWidth, maxHeight);
+  bg.background("#070C08");
   const density = 40;
-  const gap = max(max_width, max_height) / density;
+  const gap = max(maxWidth, maxHeight) / density;
   const lines = [];
   let odd = false;
 
-  background("#070C08");   // 背景底色
-
-  // 生成随机抖动的点阵
-  for (let y = 0; y <= max_height + gap; y += gap) {
+  for (let y = 0; y <= maxHeight + gap; y += gap) {
     odd = !odd;
     const rowPoints = [];
     const oddFactor = odd ? gap / 2 : 0;
 
-    for (let x = 0; x <= max_width + gap; x += gap) {
+    for (let x = 0; x <= maxWidth + gap; x += gap) {
       rowPoints.push({
         x: x + (random() * 0.8 - 0.4) * gap + oddFactor,
         y: y + (random() * 0.8 - 0.4) * gap
@@ -39,7 +35,6 @@ function draw() {
     lines.push(rowPoints);
   }
 
-  // 用点阵连成三角网格
   odd = true;
   for (let y = 0; y < lines.length - 1; y++) {
     odd = !odd;
@@ -49,9 +44,15 @@ function draw() {
       dotLine.push(odd ? lines[y + 1][i] : lines[y][i]);
     }
     for (let i = 0; i < dotLine.length - 2; i++) {
-      drawTriangle(dotLine[i], dotLine[i + 1], dotLine[i + 2]);
+      drawTriangle(bg, dotLine[i], dotLine[i + 1], dotLine[i + 2]);
     }
   }
+}
+
+function draw() {  
+
+  // Show background buffer
+  image(bg, 0, 0);
 
   // ================= 叠加绘制大蘑菇 =================
   push();
@@ -68,39 +69,82 @@ function draw() {
   pop();
 }
 
-// Triangle drawing function
-const drawTriangle = (a, b, c) => {
+// Triangle drawing function for the background
+// g is the graphics buffer
+function drawTriangle (g, a, b, c) {
   // Using bezier curves to draw filled triangles to create varying thickness of triangle edges
-  fill("#BC7653");
-  stroke("#BC7653"); // outline color
-  bezier(a.x, a.y,
+  g.fill("#BC7653");
+  g.stroke("#BC7653"); // outline color
+  g.bezier(a.x, a.y,
          (a.x + b.x) / 2 + random(-2, 2), (a.y + b.y) / 2 + random(-5, 5),
          (a.x + b.x) / 2 + random(-2, 2), (a.y + b.y) / 2 + random(-5, 5),
          b.x, b.y);
-  bezier(b.x, b.y,
+  g.bezier(b.x, b.y,
          (b.x + c.x) / 2 + random(-2, 2), (b.y + c.y) / 2 + random(-5, 5),
          (b.x + c.x) / 2 + random(-2, 2), (b.y + c.y) / 2 + random(-5, 5),
          c.x, c.y);
-  bezier(c.x, c.y,
+  g.bezier(c.x, c.y,
          (c.x + a.x) / 2 + random(-2, 2), (c.y + a.y) / 2 + random(-5, 5),
          (c.x + a.x) / 2 + random(-2, 2), (c.y + a.y) / 2 + random(-5, 5),
          a.x, a.y);
 
   // Then draw triangles on top to bring back the outlined-triangle look
-  fill("#070C08");
-  stroke("#BC7653");
-  beginShape();
-  vertex(a.x, a.y);
-  vertex(b.x, b.y);
-  vertex(c.x, c.y);
-  endShape(CLOSE);
-};
+  g.fill("#070C08");
+  g.stroke("#BC7653");
+  g.beginShape();
+  g.vertex(a.x, a.y);
+  g.vertex(b.x, b.y);
+  g.vertex(c.x, c.y);
+  g.endShape(CLOSE);
+}
 
 // Function to create responsive design
 function windowResized () {
-  max_height = windowHeight;
-  max_width = windowWidth;
+  maxHeight = windowHeight;
+  maxWidth = windowWidth;
   resizeCanvas(windowWidth, windowHeight);
+  
+  // Rebuilding the background for responsive design
+  stroke("#BC7653");
+  strokeWeight(1);
+  randomSeed(1);
+
+  // Recreate background buffer
+  bg = createGraphics(maxWidth, maxHeight);
+  bg.background("#070C08");
+  
+  const density = 40;
+  const gap = max(maxWidth, maxHeight) / density;
+  const lines = [];
+  let odd = false;
+
+  for (let y = 0; y <= maxHeight + gap; y += gap) {
+    odd = !odd;
+    const rowPoints = [];
+    const oddFactor = odd ? gap / 2 : 0;
+
+    for (let x = 0; x <= maxWidth + gap; x += gap) {
+      rowPoints.push({
+        x: x + (random() * 0.8 - 0.4) * gap + oddFactor,
+        y: y + (random() * 0.8 - 0.4) * gap
+      });
+    }
+    lines.push(rowPoints);
+  }
+
+  odd = true;
+  for (let y = 0; y < lines.length - 1; y++) {
+    odd = !odd;
+    const dotLine = [];
+    for (let i = 0; i < lines[y].length; i++) {
+      dotLine.push(odd ? lines[y][i] : lines[y + 1][i]);
+      dotLine.push(odd ? lines[y + 1][i] : lines[y][i]);
+    }
+    for (let i = 0; i < dotLine.length - 2; i++) {
+      drawTriangle(bg, dotLine[i], dotLine[i + 1], dotLine[i + 2]);
+    }
+  }
+  redraw();
 }
 
 /* ================== 伞盖：更像原画的大蘑菇 ================== */
