@@ -3,6 +3,9 @@
 
 let max_height, max_width;
 
+// Graphics buffer for background
+let bg;
+
 function setup() {
   // Draw background once so the canvas isn't empty
   // Setting max height and width for responsive design
