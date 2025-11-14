@@ -1131,27 +1131,257 @@ const TYPE_LIBRARY = {
 
 // Scene layout definition array to instantiate mushrooms
 const SCENE_LAYOUT = [
-  // === 固定画布 1200×880 下的七朵小蘑菇 ===
+
+  {
+    id: "m_greenL",
+    type: "red_amanita",
+    seed: 31007,
+    anchor: { x: 184, y: 597 },
+    pose: { scale: 0.50, rot: 0 },
+    capOverride: {
+      w: 360,
+      archTop: 150,
+      archBottom: 52,
+      baseColor: { h: 354, s: 100, b: 77, a: 100 } // 伞盖颜色
+    },
+    stemOverride: {
+      h: 300,
+      topW: 96,
+      bottomW: 165,
+      ryTop: 24,
+      ryBottom: 60,
+      bulge: 0.26,
+      baseColor: { h: 55, s: 100, b: 91, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
+    }
+  },
+
+  {
+    id: "m_smallBL",
+    type: "red_amanita",
+    seed: 31008,
+    anchor: { x: 244, y: 811 },
+    pose: { scale: 0.40, rot: 0 },
+    capOverride: {
+      w: 320,
+      archTop: 135,
+      archBottom: 48,
+      baseColor: { h: 54, s: 92, b: 89, a: 100 }   // 伞盖颜色
+    },
+    stemOverride: {
+      h: 260,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 24,
+      ryBottom: 60,
+      bulge: 0.30,
+      baseColor: { h: 30, s: 10, b: 87, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
+    }
+  },
+
   {
     id: "m_midY",
     type: "red_amanita",
     seed: 31002,
     anchor: { x: 631, y: 654 },
     pose: { scale: 0.60, rot: 0 },
-    // 中间这朵：整体偏粗偏长
+    // 改伞顶高度/颜色 
+    capOverride: {
+      w: 360,              // 伞盖宽度（可选）
+      archTop: 160,        // ↑ 伞顶更高更圆
+      archBottom: 50,      // 下缘弧度
+      baseColor: { h: 315, s: 45, b: 52, a: 100 }, // 伞盖颜色（HSB）
+      pattern: { type: CAP_PATTERN.NESTED, opt: {} } // 斑点样式（可选）
+    },
     stemOverride: {
-      h: 500, topW: 80, bottomW: 170, ryTop: 26, ryBottom: 66, bulge: 0.3
+      h: 500,
+      topW: 80,
+      bottomW: 170,
+      ryTop: 26,
+      ryBottom: 66,
+      bulge: 0.3,
+      baseColor: { h: 70, s: 99, b: 76, a: 100 } // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
     }
   },
+
   {
     id: "m_purple",
     type: "red_amanita",
     seed: 31003,
     anchor: { x: 844, y: 363 },
     pose: { scale: 0.45, rot: 0 },
-    // 右上紫点：柄短细一点
+    capOverride: {
+      w: 320,
+      archTop: 180,
+      archBottom: 45,
+      baseColor: { h: 168, s: 96, b: 41, a: 100 }, // 伞盖颜色
+      pattern: { type: CAP_PATTERN.CIRCLES_MONO, opt: { minR: 4, maxR: 10 } }
+    },
     stemOverride: {
-      h: 300, topW: 100, bottomW: 160, ryTop: 26, ryBottom: 48, bulge: 0.20
+      h: 300,
+      topW: 100,
+      bottomW: 160,
+      ryTop: 26,
+      ryBottom: 48,
+      bulge: 0.20,
+      baseColor: { h: 52, s: 80, b: 92, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 168, s: 96, b: 41, a: 100 }   // 伞底颜色
+    }
+  },
+
+  {
+    id: "m_cluster2",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 818, y: 796 },
+    pose: { scale: 0.35, rot: -Math.PI/18 },
+    capOverride: {
+      w: 320,
+      archTop: 140,
+      archBottom: 50,
+      baseColor: { h: 355, s: 99, b: 74, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: { ringCountRange: [6, 9] }
+      }
+    },
+    stemOverride: {
+      h: 400,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 22,
+      ryBottom: 70,
+      bulge: 0.3,
+      baseColor: { h: 16, s: 19, b: 97, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 355, s: 99, b: 74, a: 100 }   // 伞底颜色
+    }
+  },
+  {
+    id: "m_cluster1",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 748, y: 866 },
+    pose: { scale: 0.2, rot: -Math.PI/9 },
+    capOverride: {
+      w: 320,
+      archTop: 140,
+      archBottom: 50,
+      baseColor: { h: 357, s: 99, b: 75, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: { ringCountRange: [6, 9] }
+      }
+    },
+    stemOverride: {
+      h: 400,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 22,
+      ryBottom: 70,
+      bulge: 0.3,
+      baseColor: { h: 343, s: 58, b: 64, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 357, s: 99, b: 75, a: 100 }   // 伞底颜色
+    }
+  },
+  {
+    id: "m_cluster",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 898, y: 736 },
+    pose: { scale: 0.35, rot: 0 },
+    capOverride: {
+      w: 320,
+      archTop: 140,
+      archBottom: 50,
+      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: { ringCountRange: [6, 9] }
+      }
+    },
+    stemOverride: {
+      h: 550,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 22,
+      ryBottom: 70,
+      bulge: 0.3,
+      baseColor: { h: 51, s: 90, b: 91, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 38, s: 12, b: 90, a: 100 }   // 伞底颜色
+    }
+  },
+  {
+    id: "m_cluster3",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 988, y: 786 },
+    pose: { scale: 0.35, rot: Math.PI/18 },
+    capOverride: {
+      w: 320,
+      archTop: 140,
+      archBottom: 50,
+      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: { ringCountRange: [6, 9] }
+      }
+    },
+    stemOverride: {
+      h: 400,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 22,
+      ryBottom: 70,
+      bulge: 0.3,
+      baseColor: { h: 16, s: 19, b: 97, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 38, s: 12, b: 90, a: 100 }   // 伞底颜色
+    }
+  },
+  {
+    id: "m_cluster4",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 1040, y: 856 },
+    pose: { scale: 0.24, rot: Math.PI/9 },
+    capOverride: {
+      w: 320,
+      archTop: 140,
+      archBottom: 50,
+      baseColor: { h: 163, s: 89, b: 34, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: { ringCountRange: [6, 9] }
+      }
+    },
+    stemOverride: {
+      h: 350,
+      topW: 100,
+      bottomW: 200,
+      ryTop: 22,
+      ryBottom: 70,
+      bulge: 0.3,
+      baseColor: { h: 60, s: 6, b: 85, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 163, s: 89, b: 34, a: 100 }   // 伞底颜色
     }
   },
   {
@@ -1160,53 +1390,54 @@ const SCENE_LAYOUT = [
     seed: 31004,
     anchor: { x: 1034, y: 470 },
     pose: { scale: 0.50, rot: Math.PI / 4.5 },
-    // 右侧红伞：中等长度，略鼓
+    capOverride: {
+      w: 340,
+      archTop: 80,
+      archBottom: 50,
+      baseColor: { h: 359, s: 90, b: 80, a: 100 }, // 伞盖颜色
+      pattern: { type: CAP_PATTERN.NESTED, opt: { maxCount: 140 } }
+    },
     stemOverride: {
-      h: 350, topW: 90, bottomW: 150, ryTop: 24, ryBottom: 58, bulge: 0.24
+      h: 350,
+      topW: 90,
+      bottomW: 150,
+      ryTop: 24,
+      ryBottom: 58,
+      bulge: 0.24,
+      baseColor: { h: 22, s: 13, b: 100, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 65, s: 55, b: 83, a: 100 }   // 伞底颜色
     }
   },
+
   {
     id: "m_blueTop",
     type: "red_amanita",
     seed: 31005,
     anchor: { x: 1054, y: 112 },
-    pose: { scale: 0.40, rot: 20 }, // 20 度（单位：度）
-    // 右上蓝白：更细更短，显得轻
+    pose: { scale: 0.40, rot: 20 }, // 这里是 20（如果没 angleMode(DEGREES) 就是 20 弧度）
+    capOverride: {
+      w: 300,
+      archTop: 70,
+      archBottom: 40,
+      baseColor: { h: 201, s: 99, b: 69, a: 100 }, // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.CIRCLES_MONO,
+        opt: { minR: 4, maxR: 10, maxCount: 120 }
+      }
+    },
     stemOverride: {
-      h: 300, topW: 70, bottomW: 110, ryTop: 20, ryBottom: 44, bulge: 0.18
-    }
-  },
-  {
-    id: "m_cluster",
-    type: "red_amanita",
-    seed: 31006,
-    anchor: { x: 898, y: 756 },
-    pose: { scale: 0.35, rot: 0 },
-    // 右下小簇中心：最短最细
-    stemOverride: {
-      h: 500, topW: 100, bottomW: 200, ryTop: 22, ryBottom: 70, bulge: 0.3
-    }
-  },
-  {
-    id: "m_greenL",
-    type: "red_amanita",
-    seed: 31007,
-    anchor: { x: 184, y: 597 },
-    pose: { scale: 0.50, rot: 0 },
-    // 左侧绿色：中长偏粗
-    stemOverride: {
-      h: 300, topW: 96, bottomW: 165, ryTop: 24, ryBottom: 60, bulge: 0.26
-    }
-  },
-  {
-    id: "m_smallBL",
-    type: "red_amanita",
-    seed: 31008,
-    anchor: { x: 244, y: 811 },
-    pose: { scale: 0.40, rot: 0 },
-    // 左下小个：矮胖一点
-    stemOverride: {
-      h: 260, topW: 100, bottomW: 200, ryTop: 24, ryBottom: 60, bulge: 0.30
+      h: 300,
+      topW: 70,
+      bottomW: 110,
+      ryTop: 20,
+      ryBottom: 44,
+      bulge: 0.18,
+      baseColor: { h: 100, s: 3, b: 91, a: 100 }  // 柄颜色
+    },
+    baseOverride: {
+      baseColor: { h: 100, s: 3, b: 91, a: 100 }   // 伞底颜色
     }
   }
 ];
