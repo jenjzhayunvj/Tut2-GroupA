@@ -104,204 +104,320 @@ const PatternPainter = {
   },
 
   //For Cap patterns CIRCLES_MULTI and CIRCLES_MONO
-  circles(deps, cfg) {
-    const poly = deps.poly;
-    const rx = deps.rx || (deps.w ? deps.w * 0.5 : 40);
-    const accent1 = deps.accent1 || color(0, 0, 0);
-    const accent2 = deps.accent2 || color(0, 0, 100);
+// For Cap patterns CIRCLES_MULTI and CIRCLES_MONO
+circles(deps, cfg) {
+  const poly = deps.poly;
+  const rx = deps.rx || (deps.w ? deps.w * 0.5 : 40);
+  const accent1_default = deps.accent1 || color(0, 0, 0);
+  const accent2_default = deps.accent2 || color(0, 0, 100);
 
-    let placed = [];
-    let count = 0;
-    const bb = boundingBox(poly);
+  // --- 新增：允许 opt 覆盖 accent1 / accent2 ---
+  let accent1 = accent1_default;
+  let accent2 = accent2_default;
 
-    const minR = cfg.minR != null ? cfg.minR : rx * 0.03;
-    const maxR = cfg.maxR != null ? cfg.maxR : rx * 0.08;
-    const tries = cfg.tries != null ? cfg.tries : 1200;
-    const maxCount = cfg.maxCount != null ? cfg.maxCount : 100;
-    const gap = cfg.gap != null ? cfg.gap : rx * 0.03;
+  if (cfg.accent1) {
+    accent1 = color(
+      cfg.accent1.h,
+      cfg.accent1.s,
+      cfg.accent1.b,
+      cfg.accent1.a != null ? cfg.accent1.a : 100
+    );
+  }
+  if (cfg.accent2) {
+    accent2 = color(
+      cfg.accent2.h,
+      cfg.accent2.s,
+      cfg.accent2.b,
+      cfg.accent2.a != null ? cfg.accent2.a : 100
+    );
+  }
 
-    for (let i = 0; i < tries && count < maxCount; i++) {
-      const c = createVector(random(bb.minx, bb.maxx), random(bb.miny, bb.maxy));
-      const r = random(minR, maxR);
+  // --- circle placement parameters ---
+  let placed = [];
+  let count = 0;
+  const bb = boundingBox(poly);
 
-      let ok = true;
-      for (let e of placed) {
-        if (p5.Vector.dist(c, e.c) < (r + e.r + gap)) { ok = false; break; }
+  const minR   = cfg.minR   != null ? cfg.minR   : rx * 0.03;
+  const maxR   = cfg.maxR   != null ? cfg.maxR   : rx * 0.08;
+  const tries  = cfg.tries  != null ? cfg.tries  : 1200;
+  const maxCount = cfg.maxCount != null ? cfg.maxCount : 100;
+  const gap    = cfg.gap    != null ? cfg.gap    : rx * 0.03;
+
+  // --- main loop: random placement of circles ---
+  for (let i = 0; i < tries && count < maxCount; i++) {
+
+    // 随机取点
+    const c = createVector(random(bb.minx, bb.maxx), random(bb.miny, bb.maxy));
+    const r = random(minR, maxR);
+
+    // 避免重叠
+    let ok = true;
+    for (let e of placed) {
+      if (p5.Vector.dist(c, e.c) < (r + e.r + gap)) {
+        ok = false;
+        break;
       }
-      if (!ok) continue;
-
-      noStroke();
-      if (cfg.mono) fill(accent1);
-      else fill(random([accent1, accent2]));
-      circle(c.x, c.y, 2 * r);
-
-      placed.push({ c, r });
-      count++;
     }
-  },
+    if (!ok) continue;
 
-  //For Cap pattern NESTED
-  nested(deps, cfg) {
-    const poly = deps.poly;
-    const rx = deps.rx || (deps.w ? deps.w * 0.5 : 40);
-    const accent1 = deps.accent1 || color(0, 0, 0);
-    const accent2 = deps.accent2 || color(0, 0, 100);
-
-    let placed = [];
-    let count = 0;
-    const bb = boundingBox(poly);
-
-    const minR = cfg.minR != null ? cfg.minR : rx * 0.028;
-    const maxR = cfg.maxR != null ? cfg.maxR : rx * 0.11;
-    const tries = cfg.tries != null ? cfg.tries : 1200;
-    const maxCount = cfg.maxCount != null ? cfg.maxCount : 145;
-    const nestProb = cfg.nestProb != null ? cfg.nestProb : 0.45;
-
-    for (let i = 0; i < tries && count < maxCount; i++) {
-      const c = createVector(random(bb.minx, bb.maxx), random(bb.miny, bb.maxy));
-      const r = random(minR, maxR);
-
-      let ok = true;
-      for (const e of placed) {
-        if (p5.Vector.dist(c, e.c) < (r + e.r + rx * 0.01)) { ok = false; break; }
-      }
-      if (!ok) continue;
-
-      noStroke();
-      fill(accent1);
-      circle(c.x, c.y, r * 2);
-
-      if (random() < nestProb) {
-        fill(accent2);
-        const rr = r * random(0.4, 0.6);
-        circle(c.x, c.y, rr * 2);
-      }
-
-      placed.push({ c, r });
-      count++;
-    }
-  },
-
-  //For Cap pattern NOISY_RINGS
-  noisyRings(deps, cfg) {
-    const topPts = deps.topPts || [];
-    if (!topPts.length) return;
-    const center = cfg.center || topPts[floor(topPts.length / 2)];
+    // --- 绘制 ---
     noStroke();
+    if (cfg.mono) {
+      fill(accent1);          // 单色：全部用 accent1
+    } else {
+      fill(random([accent1, accent2]));  // 多色：随机 accent1 / accent2
+    }
+    circle(c.x, c.y, 2 * r);
 
-    const ringColor = color(
+    placed.push({ c, r });
+    count++;
+  }
+}
+,
+
+//For Cap pattern NESTED
+nested(deps, cfg = {}) {
+  const poly = deps.poly;
+  const rx = deps.rx || (deps.w ? deps.w * 0.5 : 40);
+
+  // 原来只用 deps.accent1/2，现在加上 cfg 覆盖
+  let accent1 = deps.accent1 || color(0, 0, 0);
+  let accent2 = deps.accent2 || color(0, 0, 100);
+
+  // ✅ 允许通过 cfg.accent1 / cfg.accent2 覆盖颜色
+  if (cfg.accent1) {
+    accent1 = color(
+      cfg.accent1.h,
+      cfg.accent1.s,
+      cfg.accent1.b,
+      cfg.accent1.a != null ? cfg.accent1.a : 100
+    );
+  }
+  if (cfg.accent2) {
+    accent2 = color(
+      cfg.accent2.h,
+      cfg.accent2.s,
+      cfg.accent2.b,
+      cfg.accent2.a != null ? cfg.accent2.a : 100
+    );
+  }
+
+  let placed = [];
+  let count = 0;
+  const bb = boundingBox(poly);
+
+  const minR = cfg.minR != null ? cfg.minR : rx * 0.028;
+  const maxR = cfg.maxR != null ? cfg.maxR : rx * 0.11;
+  const tries = cfg.tries != null ? cfg.tries : 1200;
+  const maxCount = cfg.maxCount != null ? cfg.maxCount : 145;
+  const nestProb = cfg.nestProb != null ? cfg.nestProb : 0.45;
+
+  for (let i = 0; i < tries && count < maxCount; i++) {
+    const c = createVector(random(bb.minx, bb.maxx), random(bb.miny, bb.maxy));
+    const r = random(minR, maxR);
+
+    let ok = true;
+    for (const e of placed) {
+      if (p5.Vector.dist(c, e.c) < (r + e.r + rx * 0.01)) { ok = false; break; }
+    }
+    if (!ok) continue;
+
+    noStroke();
+    // 外圈：accent1
+    fill(accent1);
+    circle(c.x, c.y, r * 2);
+
+    // 内嵌小圆：accent2
+    if (random() < nestProb) {
+      fill(accent2);
+      const rr = r * random(0.4, 0.6);
+      circle(c.x, c.y, rr * 2);
+    }
+
+    placed.push({ c, r });
+    count++;
+  }
+}
+,
+
+// For Cap pattern NOISY_RINGS
+noisyRings(deps, cfg = {}) {
+  const topPts = deps.topPts || [];
+  if (!topPts.length) return;
+
+  const center = cfg.center || topPts[floor(topPts.length / 2)];
+  noStroke();
+
+  // ✅ 先看 cfg.ringColor，有就用，没有再随机
+  let ringColor;
+  if (cfg.ringColor) {
+    if (cfg.ringColor instanceof p5.Color) {
+      ringColor = cfg.ringColor;
+    } else {
+      ringColor = color(
+        cfg.ringColor.h,
+        cfg.ringColor.s,
+        cfg.ringColor.b,
+        cfg.ringColor.a != null ? cfg.ringColor.a : 100
+      );
+    }
+  } else {
+    ringColor = color(
       random(360),
       random(40, 85),
       random(40, 90)
     );
-    fill(ringColor);
+  }
 
-    const ellW = random(
-      (cfg.ellWRange && cfg.ellWRange[0]) != null ? cfg.ellWRange[0] : 60,
-      (cfg.ellWRange && cfg.ellWRange[1]) != null ? cfg.ellWRange[1] : 160
-    );
-    const ellH = ellW * random(
-      (cfg.ellAspectRange && cfg.ellAspectRange[0]) != null ? cfg.ellAspectRange[0] : 0.3,
-      (cfg.ellAspectRange && cfg.ellAspectRange[1]) != null ? cfg.ellAspectRange[1] : 0.65
-    );
-    ellipse(center.x, center.y, ellW, ellH);
+  fill(ringColor);
 
-    const ellipseOuter = max(ellW, ellH) * 0.5;
-    const ringCount = floor(random(
-      (cfg.ringCountRange && cfg.ringCountRange[0]) != null ? cfg.ringCountRange[0] : 5,
-      (cfg.ringCountRange && cfg.ringCountRange[1]) != null ? cfg.ringCountRange[1] : 9
-    ));
-    const ringGap = cfg.ringGap != null ? cfg.ringGap : 22;
-    const gapArc = cfg.gapArc != null ? cfg.gapArc : 6;
+  const ellW = random(
+    (cfg.ellWRange && cfg.ellWRange[0]) != null ? cfg.ellWRange[0] : 60,
+    (cfg.ellWRange && cfg.ellWRange[1]) != null ? cfg.ellWRange[1] : 160
+  );
+  const ellH = ellW * random(
+    (cfg.ellAspectRange && cfg.ellAspectRange[0]) != null ? cfg.ellAspectRange[0] : 0.3,
+    (cfg.ellAspectRange && cfg.ellAspectRange[1]) != null ? cfg.ellAspectRange[1] : 0.65
+  );
+  ellipse(center.x, center.y, ellW, ellH);
 
-    let rings = [];
-    rings[0] = ellipseOuter + ringGap + random(5, 10);
-    for (let i = 1; i < ringCount; i++) {
-      rings[i] = rings[i - 1] + ringGap + random(8, 14);
-    }
+  const ellipseOuter = max(ellW, ellH) * 0.5;
+  const ringCount = floor(random(
+    (cfg.ringCountRange && cfg.ringCountRange[0]) != null ? cfg.ringCountRange[0] : 5,
+    (cfg.ringCountRange && cfg.ringCountRange[1]) != null ? cfg.ringCountRange[1] : 9
+  ));
+  const ringGap = cfg.ringGap != null ? cfg.ringGap : 22;
+  const gapArc = cfg.gapArc != null ? cfg.gapArc : 6;
 
-    const innerMax = (cfg.innerMax != null ? cfg.innerMax : 30) * 1.25;
-    const innerMin = (cfg.innerMin != null ? cfg.innerMin : 16) * 1.10;
-    const outerMax = (cfg.outerMax != null ? cfg.outerMax : 12) * 0.60;
-    const outerMin = (cfg.outerMin != null ? cfg.outerMin : 6) * 0.45;
-    const noiseFreq = cfg.noiseFreq != null ? cfg.noiseFreq : random(0.6, 1.2);
-    const noiseBase = floor(random(1e6));
+  let rings = [];
+  rings[0] = ellipseOuter + ringGap + random(5, 10);
+  for (let i = 1; i < ringCount; i++) {
+    rings[i] = rings[i - 1] + ringGap + random(8, 14);
+  }
 
-    for (let idx = 0; idx < rings.length; idx++) {
-      const r0 = rings[idx];
-      let th = 0;
-      let firstD = null;
+  const innerMax  = (cfg.innerMax  != null ? cfg.innerMax  : 30) * 1.25;
+  const innerMin  = (cfg.innerMin  != null ? cfg.innerMin  : 16) * 1.10;
+  const outerMax  = (cfg.outerMax  != null ? cfg.outerMax  : 12) * 0.60;
+  const outerMin  = (cfg.outerMin  != null ? cfg.outerMin  : 6)  * 0.45;
+  const noiseFreq = cfg.noiseFreq != null ? cfg.noiseFreq : random(0.6, 1.2);
+  const noiseBase = floor(random(1e6));
 
-      const t = idx / max(1, (rings.length - 1));
-      const maxD = lerp(innerMax, outerMax, t);
-      const minD = lerp(innerMin, outerMin, t);
+  for (let idx = 0; idx < rings.length; idx++) {
+    const r0 = rings[idx];
+    let th = 0;
+    let firstD = null;
 
-      while (th < TWO_PI) {
-        const n = noise(
-          noiseBase + idx * 7777 + cos(th) * noiseFreq,
-          noiseBase + idx * 7777 + sin(th) * noiseFreq
-        );
-        let d = map(n, 0, 1, minD, maxD);
+    const t = idx / max(1, (rings.length - 1));
+    const maxD = lerp(innerMax, outerMax, t);
+    const minD = lerp(innerMin, outerMin, t);
 
-        if (firstD === null) firstD = d;
-        else {
-          const need = (d + firstD + gapArc) / r0;
-          if (TWO_PI - th < need) break;
-        }
+    while (th < TWO_PI) {
+      const n = noise(
+        noiseBase + idx * 7777 + cos(th) * noiseFreq,
+        noiseBase + idx * 7777 + sin(th) * noiseFreq
+      );
+      let d = map(n, 0, 1, minD, maxD);
 
-        const x = center.x + r0 * cos(th);
-        const y = center.y + r0 * sin(th);
-        circle(x, y, d);
-
-        th += max((d + gapArc) * 1.04 / r0, 0.004);
+      if (firstD === null) firstD = d;
+      else {
+        const need = (d + firstD + gapArc) / r0;
+        if (TWO_PI - th < need) break;
       }
+
+      const x = center.x + r0 * cos(th);
+      const y = center.y + r0 * sin(th);
+      circle(x, y, d);
+
+      th += max((d + gapArc) * 1.04 / r0, 0.004);
     }
-  },
+  }
+}
+,
 
   //For Base patterns TRACKS_MONO and TRACKS_ALT
-  baseTracks(deps, cfg = {}) {
-    const poly = deps.poly;
-    const bb = boundingBox(poly);
+// For Base patterns TRACKS_MONO and TRACKS_ALT
+baseTracks(deps, cfg = {}) {
+  const poly = deps.poly;
+  const bb = boundingBox(poly);
 
-    const center = deps.center ? (deps.center.copy ? deps.center.copy() : createVector(deps.center.x, deps.center.y))
-      : createVector((bb.minx + bb.maxx) * 0.5, bb.maxy);
+  const center = deps.center
+    ? (deps.center.copy ? deps.center.copy() : createVector(deps.center.x, deps.center.y))
+    : createVector((bb.minx + bb.maxx) * 0.5, bb.maxy);
 
-    let maxR = 0;
-    for (const p of poly) maxR = max(maxR, p5.Vector.dist(center, p));
+  let maxR = 0;
+  for (const p of poly) {
+    maxR = max(maxR, p5.Vector.dist(center, p));
+  }
 
-    const trackAngleStep = radians(10);
-    const angleStart = PI;
-    const angleEnd   = TWO_PI;
-    const circlesPerTrack = 12;
-    const circleDiameter  = maxR * 0.03;
-    const radialStep = maxR / (circlesPerTrack + 1);
+  const trackAngleStep   = radians(10);          // 每条轨道的角度间隔
+  const angleStart       = PI;
+  const angleEnd         = TWO_PI;
+  const circlesPerTrack  = 12;                   // 每条轨道上的点个数
+  const circleDiameter   = maxR * 0.03;          // 点的直径
+  const radialStep       = maxR / (circlesPerTrack + 1);
 
-    const useAlt = !!cfg.alt;
+  const useAlt = !!cfg.alt;  // true = 两色交替
 
-    noStroke();
-    push();
+  noStroke();
+  push();
 
-    const c1 = color(50, 63, 46);
-    const c2 = color(126, 22, 89);
+  // 默认两种轨迹颜色
+  const c1_default = color(50, 63, 46);
+  const c2_default = color(126, 22, 89);
 
-    let trackIndex = 0;
-    for (let angle = angleStart; angle <= angleEnd + 1e-6; angle += trackAngleStep) {
+  // ✅ 允许通过 cfg.accent1 / cfg.accent2 覆盖
+  let c1 = c1_default;
+  let c2 = c2_default;
 
-      const trackColor = useAlt ? ((trackIndex % 2 === 0) ? c1 : c2) : c1;
-      fill(trackColor);
+  if (cfg.accent1) {
+    if (cfg.accent1 instanceof p5.Color) {
+      c1 = cfg.accent1;
+    } else {
+      c1 = color(
+        cfg.accent1.h,
+        cfg.accent1.s,
+        cfg.accent1.b,
+        cfg.accent1.a != null ? cfg.accent1.a : 100
+      );
+    }
+  }
 
-      for (let i = 1; i <= circlesPerTrack; i++) {
-        const r = radialStep * i;
-        const x = center.x + r * cos(angle);
-        const y = center.y + r * sin(angle);
-        circle(x, y, circleDiameter);
-      }
+  if (cfg.accent2) {
+    if (cfg.accent2 instanceof p5.Color) {
+      c2 = cfg.accent2;
+    } else {
+      c2 = color(
+        cfg.accent2.h,
+        cfg.accent2.s,
+        cfg.accent2.b,
+        cfg.accent2.a != null ? cfg.accent2.a : 100
+      );
+    }
+  }
 
-      trackIndex++;
+  let trackIndex = 0;
+  for (let angle = angleStart; angle <= angleEnd + 1e-6; angle += trackAngleStep) {
+
+    // 单色：全部用 c1；混色：轨道在 c1 / c2 间交替
+    const trackColor = useAlt
+      ? (trackIndex % 2 === 0 ? c1 : c2)
+      : c1;
+
+    fill(trackColor);
+
+    for (let i = 1; i <= circlesPerTrack; i++) {
+      const r = radialStep * i;
+      const x = center.x + r * cos(angle);
+      const y = center.y + r * sin(angle);
+      circle(x, y, circleDiameter);
     }
 
-    pop();
-  },
+    trackIndex++;
+  }
+
+  pop();
+},
+
 
   // Fpr Stem pattern VORONOI
   // depend on p5.voronoi library
@@ -1071,7 +1187,7 @@ class Scene {
 
 //Type library to define different mushroom types
 const TYPE_LIBRARY = {
-  red_amanita: {
+  default: {
     cap: {
       visible: true,
       w: 360,
@@ -1126,67 +1242,147 @@ const TYPE_LIBRARY = {
       stemOffset: { x: 0, y: 0 },
       baseOffset: { x: 0, y: 0 }
     }
+  },
+  withoutBasePart: {
+    cap: {
+      visible: true,
+      w: 360,
+      baseColor: { h: 258, s: 52, b: 71, a: 100 },
+      pattern: { type: CAP_PATTERN.NESTED, opt: {} }
+    },
+    stem: {
+      visible: true,
+      h: 250,
+      w: 40,
+      // ↓ 往下放一点（数值更接近 0 = 更靠下）
+      offsetY: 70,            // 原 -100
+      topW: 80,
+      bottomW: 150,
+      ryTop: 20,
+      ryBottom: 60,
+      bulge: 0.24,
+      baseColor: { h: 116, s: 35, b: 75, a: 100 },
+      strokeWidth: 5,
+      strokeColor: { h: 116, s: 35, b: 75, a: 100 },
+      pattern: {
+        type: STEM_PATTERN.DOT_GRADIENT,
+        opt: {
+          maxCount: 220,
+          tries: 1500,
+          minR: 3,
+          maxR: 10,
+          jitterScale: 0.15,
+          gap: 1.5,
+          dotColor: { h: 110, s: 60, b: 90, a: 100 }
+        }
+      }
+    },
+    base: {
+      visible: false,
+    },
+    // 三部分仍共享同一锚点，不做额外 layout 偏移
+    layout: {
+      capOffset:  { x: 0, y: 0 },
+      stemOffset: { x: 0, y: 0 },
+      baseOffset: { x: 0, y: 0 }
+    }
   }
 };
 
 // Scene layout definition array to instantiate mushrooms
 const SCENE_LAYOUT = [
 
-  {
-    id: "m_greenL",
-    type: "red_amanita",
-    seed: 31007,
-    anchor: { x: 184, y: 597 },
-    pose: { scale: 0.50, rot: 0 },
-    capOverride: {
-      w: 360,
-      archTop: 150,
-      archBottom: 52,
-      baseColor: { h: 354, s: 100, b: 77, a: 100 } // 伞盖颜色
-    },
-    stemOverride: {
-      h: 300,
-      topW: 96,
-      bottomW: 165,
-      ryTop: 24,
-      ryBottom: 60,
-      bulge: 0.26,
-      baseColor: { h: 55, s: 100, b: 91, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
+{
+  id: "m_greenL",
+  type: "default",
+  seed: 31007,
+  anchor: { x: 184, y: 597 },
+  pose: { scale: 0.50, rot: 0 },
+
+  capOverride: {
+    w: 360,
+    archTop: 150,
+    archBottom: 52,
+    baseColor: { h: 354, s: 100, b: 77, a: 100 },
+    pattern: {
+      type: CAP_PATTERN.NESTED,
+      opt: {
+        accent1: { h: 44, s: 8, b: 88, a: 100},  // 第一种颜色
+        accent2: { h: 139, s: 94, b: 52, a: 100 }, // 第二种颜色
+      }
     }
   },
 
+  stemOverride: {
+    h: 220,
+    baseColor: { h: 120, s: 80, b: 80, a: 100 },  // 绿色
+    offsetY: 110,
+    strokeColor:  { h: 132, s: 91, b: 44, a: 100 },
+    pattern: {
+      type: STEM_PATTERN.VORONOI,
+      opt: {
+        siteCount: 80,
+        baseColor: { h: 120, s: 80, b: 80, a: 100 },   // 黄色纹理
+        edgeColor: { h: 132, s: 91, b: 44, a: 100 },  // 深绿边线
+        edgeWeight: 1.2
+      }
+    }
+  },
+
+  baseOverride: {
+    baseColor: { h: 50, s: 85, b: 90, a: 100 }
+  }
+}
+,
+
   {
     id: "m_smallBL",
-    type: "red_amanita",
+    type: "withoutBasePart",
     seed: 31008,
-    anchor: { x: 244, y: 811 },
+    anchor: { x: 244, y: 820 },
     pose: { scale: 0.40, rot: 0 },
     capOverride: {
       w: 320,
-      archTop: 135,
-      archBottom: 48,
-      baseColor: { h: 54, s: 92, b: 89, a: 100 }   // 伞盖颜色
+      archTop: 200,
+      archBottom: 100,
+      baseColor: { h: 54, s: 92, b: 89, a: 100 },   // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NOISY_RINGS,
+        opt: {
+          ringColor: { h: 183, s: 99, b: 38, a: 100 } 
+        }
+      }
     },
     stemOverride: {
-      h: 260,
+      // 不动形状参数（沿用你的）
+      h: 380,
       topW: 100,
       bottomW: 200,
       ryTop: 24,
       ryBottom: 60,
       bulge: 0.30,
-      baseColor: { h: 30, s: 10, b: 87, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
+
+      baseColor: { h: 0, s: 100, b: 85, a: 100 },
+      strokeColor:  { h: 0, s: 100, b: 85, a: 100 },
+      // 图案：竖向白色圆点
+      pattern: {
+        type: STEM_PATTERN.DOT_TRACKS,
+        opt: {
+          trackCount: 11,        // 越大越密，你可以微调
+          rows: 15,             // 纵向点数（可以 14–22 自己调）
+          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // 白色点
+          edgeScale: 0.4,       // 越靠两边点越小
+          jitterY: 2,           // 点位置少量随机抖动
+          baseRadius: 10         // 点的半径基准（中间的点会更大）
+        }
+      }
     }
+    
   },
 
   {
     id: "m_midY",
-    type: "red_amanita",
+    type: "default",
     seed: 31002,
     anchor: { x: 631, y: 654 },
     pose: { scale: 0.60, rot: 0 },
@@ -1196,150 +1392,278 @@ const SCENE_LAYOUT = [
       archTop: 160,        // ↑ 伞顶更高更圆
       archBottom: 50,      // 下缘弧度
       baseColor: { h: 315, s: 45, b: 52, a: 100 }, // 伞盖颜色（HSB）
-      pattern: { type: CAP_PATTERN.NESTED, opt: {} } // 斑点样式（可选）
+      pattern: { 
+        type: CAP_PATTERN.NESTED, 
+        opt: {
+              accent1: { h: 53, s: 93, b: 92, a: 100},  // 第一种颜色
+              accent2: { h: 78, s: 79, b: 74, a: 100 }, // 第二种颜色
+            } // 斑点样式（可选）
+      }
     },
     stemOverride: {
       h: 500,
-      topW: 80,
-      bottomW: 170,
+      topW: 90,
+      bottomW: 180,
       ryTop: 26,
-      ryBottom: 66,
+      ryBottom: 80,
       bulge: 0.3,
-      baseColor: { h: 70, s: 99, b: 76, a: 100 } // 柄颜色
+      baseColor: { h: 70, s: 99, b: 76, a: 100 }, // 柄颜色
+      pattern: {
+      type: STEM_PATTERN.VORONOI,
+      opt: {
+        siteCount: 80,
+        baseColor: { h: 95, s: 85, b: 75, a: 100 },   // 黄色纹理
+        edgeColor: {  h: 61, s: 85, b: 84  },  // 深绿边线
+        edgeWeight: 1.2
+      }
+    }
     },
     baseOverride: {
       baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
     }
   },
 
-  {
-    id: "m_purple",
-    type: "red_amanita",
-    seed: 31003,
-    anchor: { x: 844, y: 363 },
-    pose: { scale: 0.45, rot: 0 },
-    capOverride: {
-      w: 320,
-      archTop: 180,
-      archBottom: 45,
-      baseColor: { h: 168, s: 96, b: 41, a: 100 }, // 伞盖颜色
-      pattern: { type: CAP_PATTERN.CIRCLES_MONO, opt: { minR: 4, maxR: 10 } }
-    },
-    stemOverride: {
-      h: 300,
-      topW: 100,
-      bottomW: 160,
-      ryTop: 26,
-      ryBottom: 48,
-      bulge: 0.20,
-      baseColor: { h: 52, s: 80, b: 92, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 168, s: 96, b: 41, a: 100 }   // 伞底颜色
+{
+  id: "m_purple",
+  type: "withoutBasePart",
+  seed: 31003,
+  anchor: { x: 844, y: 363 },
+  pose: { scale: 0.45, rot: 0 },
+
+  capOverride: {
+    w: 340,              // ← cap 的宽度参数应该是 w
+    archTop: 230,
+    archBottom: 120,
+    baseColor: { h: 168, s: 96, b: 41, a: 100 }, // 伞盖颜色
+    pattern: {
+      type: CAP_PATTERN.CIRCLES_MONO,
+      opt: { 
+        minR: 8, 
+        maxR: 20,
+        accent1: { h: 337, s: 68, b: 85, a: 100 } 
+      }
     }
   },
 
-  {
-    id: "m_cluster2",
-    type: "red_amanita",
-    seed: 31006,
-    anchor: { x: 818, y: 796 },
-    pose: { scale: 0.35, rot: -Math.PI/18 },
-    capOverride: {
-      w: 320,
-      archTop: 140,
-      archBottom: 50,
-      baseColor: { h: 355, s: 99, b: 74, a: 100 },  // 伞盖颜色
-      pattern: {
-        type: CAP_PATTERN.NOISY_RINGS,
-        opt: { ringCountRange: [6, 9] }
+  stemOverride: {
+    visible: true,
+    h: 250,
+    topW: 100,
+    bottomW: 140,
+    ryTop: 26,
+    ryBottom: 30,
+    bulge: 0.20,
+    baseColor: { h: 52, s: 80, b: 92, a: 100 },  
+    strokeColor:  { h: 52, s: 80, b: 92, a: 100 },
+    pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 9,
+        rows: 10,
+        dotColor: { h: 154, s: 77, b: 37, a: 100 },  // 白色点
+        edgeScale: 0.5,
+        jitterY: 2,
+        baseRadius: 6
       }
-    },
-    stemOverride: {
-      h: 400,
-      topW: 100,
-      bottomW: 200,
-      ryTop: 22,
-      ryBottom: 70,
-      bulge: 0.3,
-      baseColor: { h: 16, s: 19, b: 97, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 355, s: 99, b: 74, a: 100 }   // 伞底颜色
     }
   },
+
+}
+,
+
+
   {
     id: "m_cluster1",
-    type: "red_amanita",
+    type: "withoutBasePart",
     seed: 31006,
     anchor: { x: 748, y: 866 },
     pose: { scale: 0.2, rot: -Math.PI/9 },
     capOverride: {
-      w: 320,
-      archTop: 140,
-      archBottom: 50,
+      w: 260,
+      archTop: 200,
+      archBottom: 60,
       baseColor: { h: 357, s: 99, b: 75, a: 100 },  // 伞盖颜色
       pattern: {
-        type: CAP_PATTERN.NOISY_RINGS,
-        opt: { ringCountRange: [6, 9] }
+        type: CAP_PATTERN.CIRCLES_MONO,
+        opt: {
+           accent1: { h: 1, s: 5, b: 100, a: 100 },
+           minR: 16,
+           maxR: 20
+          }
       }
     },
     stemOverride: {
       h: 400,
-      topW: 100,
+      topW: 120,
       bottomW: 200,
       ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 343, s: 58, b: 64, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 357, s: 99, b: 75, a: 100 }   // 伞底颜色
+      baseColor: { h: 343, s: 58, b: 64, a: 100 },  // 柄颜色
+      strokeColor:  { h: 343, s: 58, b: 64, a: 100 },
+      pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 11,                            // 竖向轨道数量
+        rows: 15,                                 // 每条轨道上的点数
+        marginX: 5,                              // 横向留白
+        jitterY: 2,                               // 轻微竖向抖动
+        edgeScale: 0.3,                           // 越靠边越小
+        baseRadius: 10,                            // 中央点半径基准
+        dotColor: { h: 348, s: 76, b: 60, a: 100 }  
+      }
     }
+    },
   },
+
   {
-    id: "m_cluster",
-    type: "red_amanita",
+    id: "m_cluster3",
+    type: "withoutBasePart",
     seed: 31006,
-    anchor: { x: 898, y: 736 },
-    pose: { scale: 0.35, rot: 0 },
+    anchor: { x: 890, y: 746 },
+    pose: { scale: 0.35, rot: -Math.PI / 36 },
     capOverride: {
-      w: 320,
-      archTop: 140,
-      archBottom: 50,
+      w: 400,
+      archTop: 280,
+      archBottom: 60,
       baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
       pattern: {
-        type: CAP_PATTERN.NOISY_RINGS,
-        opt: { ringCountRange: [6, 9] }
+        type: CAP_PATTERN.NESTED,
+        opt: { 
+          accent1: { h: 356, s: 99, b: 79, a: 100 },  //第一种颜色
+          accent2: { h: 52, s: 99, b: 92, a: 100 }, // 第二种颜色
+          maxCount: 100,
+          maxR: 40,
+          minR: 10,
+        }
       }
     },
     stemOverride: {
-      h: 550,
+      h: 530,
       topW: 100,
       bottomW: 200,
       ryTop: 22,
+      ryBottom: 100,
+      bulge: 0.3,
+      baseColor: { h: 53, s: 97, b: 91, a: 100 },  // 柄颜色
+      strokeColor:  { h: 53, s: 97, b: 91, a: 100 },
+      pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 9,                            // 竖向轨道数量
+        rows: 18,                                 // 每条轨道上的点数
+        marginX: 5,                              // 横向留白
+        jitterY: 2,                               // 轻微竖向抖动
+        edgeScale: 0.3,                           // 越靠边越小
+        baseRadius: 11,                            // 中央点半径基准
+        dotColor: { h: 348, s: 54, b: 57, a: 100 }  
+      }
+    }
+    },
+  },
+
+  {
+    id: "m_cluster2",
+    type: "withoutBasePart",
+    seed: 31006,
+    anchor: { x: 818, y: 796 },
+    pose: { scale: 0.35, rot: -Math.PI/18 },
+    capOverride: {
+      w: 280,
+      archTop: 180,
+      archBottom: 50,
+      baseColor: { h: 355, s: 99, b: 74, a: 100 },  // 伞盖颜色
+      pattern: {
+        type: CAP_PATTERN.NESTED,
+        opt: { 
+          accent1: { h: 341, s: 90, b: 35, a: 100 },  // 第一种颜色
+          accent2: { h: 318, s: 55, b: 47, a: 100 }, // 第二种颜色1
+          maxCount: 25,
+          maxR: 30,
+          minR: 10,
+        }
+      }
+    },
+    stemOverride: {
+      h: 300,
+      topW: 100,
+      bottomW: 220,
+      ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 51, s: 90, b: 91, a: 100 }  // 柄颜色
+      baseColor: { h: 27, s: 12, b: 93, a: 100 },  // 柄颜色
+      strokeColor:  { h: 27, s: 12, b: 93, a: 100 },
+      pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 9,                            // 竖向轨道数量
+        rows: 12,                                 // 每条轨道上的点数
+        marginX: 5,                              // 横向留白
+        jitterY: 2,                               // 轻微竖向抖动
+        edgeScale: 0.3,                           // 越靠边越小
+        baseRadius: 10,                            // 中央点半径基准
+        dotColor: { h: 356, s: 92, b: 73, a: 100 }  
+      }
+    }
     },
-    baseOverride: {
-      baseColor: { h: 38, s: 12, b: 90, a: 100 }   // 伞底颜色
+  },
+
+{
+  id: "m_cluster5",
+  type: "withoutBasePart",
+  seed: 31006,
+  anchor: { x: 1040, y: 856 },
+  pose: { scale: 0.24, rot: Math.PI/9 },
+
+  capOverride: {
+    w: 280,
+    archTop: 250,
+    archBottom: 40,
+    baseColor: { h: 163, s: 89, b: 34, a: 100 },
+    pattern: {
+      type: CAP_PATTERN.NOISY_RINGS,
+      opt: { 
+        ringCountRange: [10, 15],
+        ringColor: { h: 56, s: 99, b: 80, a: 100 }
+      }
     }
   },
-  {
-    id: "m_cluster3",
-    type: "red_amanita",
+
+  stemOverride: {
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },  // 白底
+    strokeColor:  { h: 0, s: 0, b: 100, a: 100 },
+    h: 360,
+    bottomW: 180,
+    pattern: {
+      type: STEM_PATTERN.DOT_GRADIENT,
+      opt: {
+        minR: 3,                      // 最小半径
+        maxR: 10,                     // 最大半径
+        dotColor: { h: 205, s: 85, b: 70, a: 100 },   // 深蓝点
+        maxCount: 150                 // 控制点的密度（可调）
+      }
+    }
+  }
+}
+,
+{
+    id: "m_cluster4",
+    type: "withoutBasePart",
     seed: 31006,
     anchor: { x: 988, y: 786 },
     pose: { scale: 0.35, rot: Math.PI/18 },
     capOverride: {
       w: 320,
-      archTop: 140,
-      archBottom: 50,
+      archTop: 220,
+      archBottom: 80,
       baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
       pattern: {
         type: CAP_PATTERN.NOISY_RINGS,
-        opt: { ringCountRange: [6, 9] }
+        opt: { 
+          ringCountRange: [10, 15] ,
+          ringColor: { h: 337, s: 71, b: 43, a: 100 }
+          
+        }
       }
     },
     stemOverride: {
@@ -1349,97 +1673,146 @@ const SCENE_LAYOUT = [
       ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 16, s: 19, b: 97, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 38, s: 12, b: 90, a: 100 }   // 伞底颜色
-    }
-  },
-  {
-    id: "m_cluster4",
-    type: "red_amanita",
-    seed: 31006,
-    anchor: { x: 1040, y: 856 },
-    pose: { scale: 0.24, rot: Math.PI/9 },
-    capOverride: {
-      w: 320,
-      archTop: 140,
-      archBottom: 50,
-      baseColor: { h: 163, s: 89, b: 34, a: 100 },  // 伞盖颜色
+      baseColor: { h: 0, s: 100, b: 85, a: 100 },  // 柄颜色
+      strokeColor:  { h: 0, s: 100, b: 85, a: 100 },
       pattern: {
-        type: CAP_PATTERN.NOISY_RINGS,
-        opt: { ringCountRange: [6, 9] }
+        type: STEM_PATTERN.DOT_TRACKS,
+        opt: {
+          trackCount: 11,        // 越大越密，你可以微调
+          rows: 15,             // 纵向点数（可以 14–22 自己调）
+          marginX: 10,      // 横向留白
+          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // 白色点
+          edgeScale: 0.4,       // 越靠两边点越小
+          jitterY: 2,           // 点位置少量随机抖动
+          baseRadius: 10         // 点的半径基准（中间的点会更大）
+        }
       }
     },
-    stemOverride: {
-      h: 350,
-      topW: 100,
-      bottomW: 200,
-      ryTop: 22,
-      ryBottom: 70,
-      bulge: 0.3,
-      baseColor: { h: 60, s: 6, b: 85, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 163, s: 89, b: 34, a: 100 }   // 伞底颜色
+  }
+,
+{
+  id: "m_redR",
+  type: "default",
+  seed: 31004,
+  anchor: { x: 1034, y: 470 },
+  pose: { scale: 0.50, rot: Math.PI / 3 },
+
+  capOverride: {
+    w: 340,
+    archTop: 120,
+    archBottom: 50,
+    baseColor: { h: 359, s: 90, b: 80, a: 100 }, // 伞盖红色
+    pattern: {
+      type: CAP_PATTERN.CIRCLES_MULTI,
+      opt: { 
+        accent1: { h: 40, s: 6, b: 89, a: 100 },  // 第一种颜色
+        accent2: { h: 75, s: 66, b: 80, a: 100 }, // 第二种颜色
+        minR: 6,  
+        maxR: 14
+       }
     }
   },
-  {
-    id: "m_redR",
-    type: "red_amanita",
-    seed: 31004,
-    anchor: { x: 1034, y: 470 },
-    pose: { scale: 0.50, rot: Math.PI / 4.5 },
-    capOverride: {
-      w: 340,
-      archTop: 80,
-      archBottom: 50,
-      baseColor: { h: 359, s: 90, b: 80, a: 100 }, // 伞盖颜色
-      pattern: { type: CAP_PATTERN.NESTED, opt: { maxCount: 140 } }
-    },
-    stemOverride: {
-      h: 350,
-      topW: 90,
-      bottomW: 150,
-      ryTop: 24,
-      ryBottom: 58,
-      bulge: 0.24,
-      baseColor: { h: 22, s: 13, b: 100, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 65, s: 55, b: 83, a: 100 }   // 伞底颜色
+  stemOverride: {
+    h: 220,
+    topW: 80,
+    bottomW: 100,
+    ryTop: 24,
+    ryBottom: 40,
+    bulge: 0.24,
+    baseColor: { h: 0, s: 0, b: 100, a: 100 }, 
+    strokeColor:  { h: 0, s: 0, b: 100, a: 100 },
+    offsetY: 130,
+    pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 5,                            // 竖向轨道数量
+        rows: 12,                                 // 每条轨道上的点数
+        marginX: 5,                              // 横向留白
+        jitterY: 2,                               // 轻微竖向抖动
+        edgeScale: 0.3,                           // 越靠边越小
+        baseRadius: 8,                            // 中央点半径基准
+        dotColor: { h: 0, s: 80, b: 80, a: 100 }  
+      }
     }
   },
 
-  {
-    id: "m_blueTop",
-    type: "red_amanita",
-    seed: 31005,
-    anchor: { x: 1054, y: 112 },
-    pose: { scale: 0.40, rot: 20 }, // 这里是 20（如果没 angleMode(DEGREES) 就是 20 弧度）
-    capOverride: {
-      w: 300,
-      archTop: 70,
-      archBottom: 40,
-      baseColor: { h: 201, s: 99, b: 69, a: 100 }, // 伞盖颜色
-      pattern: {
-        type: CAP_PATTERN.CIRCLES_MONO,
-        opt: { minR: 4, maxR: 10, maxCount: 120 }
+  // 🟡 伞底：浅黄绿底 + 两色混合轨道
+  baseOverride: {
+    baseColor: { h: 68, s: 56, b: 84, a: 100 },   // 浅黄绿色伞底
+
+    // 使用 TRACKS_ALT + 两种自定义颜色
+    pattern: {
+      type: BASE_PART_PATTERN.TRACKS_ALT,
+      opt: {
+        accent1: { h: 0, s: 61, b: 42, a: 100 }, // 偏深的绿点
+        accent2: { h: 46, s: 11, b: 91, a: 100 }  // 偏橙棕色点
       }
-    },
-    stemOverride: {
-      h: 300,
-      topW: 70,
-      bottomW: 110,
-      ryTop: 20,
-      ryBottom: 44,
-      bulge: 0.18,
-      baseColor: { h: 100, s: 3, b: 91, a: 100 }  // 柄颜色
-    },
-    baseOverride: {
-      baseColor: { h: 100, s: 3, b: 91, a: 100 }   // 伞底颜色
     }
   }
+}
+,
+
+{
+  id: "m_blueTop",
+  type: "default",
+  seed: 31005,
+  anchor: { x: 1054, y: 112 },
+  pose: { scale: 0.40, rot: 45 }, // 没有 angleMode(DEGREES) 就是 20 弧度
+
+  capOverride: {
+    w: 350,
+    archTop: 140,
+    archBottom: 50,
+    baseColor: { h: 201, s: 99, b: 69, a: 100 }, // 蓝色伞盖
+    offsetY: -20,
+    pattern: {
+      type: CAP_PATTERN.CIRCLES_MONO,
+      opt: {
+        minR: 6,         // 圆点最小半径
+        maxR: 20,        // 圆点最大半径（大圆）
+        maxCount: 110,   // 圆点个数
+        gap: 6,          // 点之间的最小间距（避免太挤）
+        accent1: { h: 0, s: 0, b: 100, a: 100 }  // 白色圆点
+      }
+    }
+  },
+
+  stemOverride: {
+    h: 300,
+    topW: 70,
+    bottomW: 110,
+    ryTop: 20,
+    ryBottom: 44,
+    bulge: 0.18,
+    offsetY: 180,
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },
+    strokeColor:  { h: 0, s: 0, b: 100, a: 100 },
+    pattern: {
+      type: STEM_PATTERN.DOT_TRACKS,
+      opt: {
+        trackCount: 7,                             // 竖向点轨道数量
+        rows: 15,                                  // 每条轨道上的点数
+        baseRadius: 6,                             // 中间一列点的基础半径
+        edgeScale: 0.3,                            // 越靠边越小
+        jitterY: 2,                                // 纵向轻微抖动
+        dotColor: { h: 201, s: 99, b: 69, a: 100 } // 蓝色点
+      }
+    }
+  },
+
+  baseOverride: {
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },    // 白色伞底
+
+    pattern: {
+      type: BASE_PART_PATTERN.TRACKS_ALT,
+      opt: {
+        accent1: { h: 201, s: 40, b: 95, a: 100 }, // 浅蓝色小点
+        accent2: { h: 250, s: 9, b: 71, a: 100 } // 白色底色
+      }
+    }
+  }
+}
+
 ];
 
 // Mushroom factory to create Mushroom instances from layout definitions
