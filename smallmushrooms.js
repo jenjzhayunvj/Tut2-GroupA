@@ -6,9 +6,9 @@ const CAP_PATTERN = {
   // Non-overlapping circles in multiple colors
   CIRCLES_MULTI: "circles_multi",
   // Noisy rings around a central ellipse
-  NOISY_RINGS: "noisy_rings",  
+  NOISY_RINGS: "noisy_rings",
   // Larger circles with optional smaller nested circles
-  NESTED: "nested",         
+  NESTED: "nested",
   // Non-overlapping circles in one color
   CIRCLES_MONO: "circles_mono"
 };
@@ -28,9 +28,9 @@ const STEM_PATTERN = {
 const BASE_PART_PATTERN = {
   NONE: "none",
   // Circular tracks in a single color
-  TRACKS_MONO: "tracks_mono", 
+  TRACKS_MONO: "tracks_mono",
   // Circular tracks with alternating colors
-  TRACKS_ALT:  "tracks_alt" 
+  TRACKS_ALT:  "tracks_alt"
 };
 
 //Clip Tool
@@ -111,7 +111,7 @@ circles(deps, cfg) {
   const accent1_default = deps.accent1 || color(0, 0, 0);
   const accent2_default = deps.accent2 || color(0, 0, 100);
 
-  // --- 新增：允许 opt 覆盖 accent1 / accent2 ---
+  // --- Added: allow opt to override accent1 / accent2 ---
   let accent1 = accent1_default;
   let accent2 = accent2_default;
 
@@ -146,11 +146,11 @@ circles(deps, cfg) {
   // --- main loop: random placement of circles ---
   for (let i = 0; i < tries && count < maxCount; i++) {
 
-    // 随机取点
+    // pick a random point
     const c = createVector(random(bb.minx, bb.maxx), random(bb.miny, bb.maxy));
     const r = random(minR, maxR);
 
-    // 避免重叠
+    // avoid overlaps
     let ok = true;
     for (let e of placed) {
       if (p5.Vector.dist(c, e.c) < (r + e.r + gap)) {
@@ -160,12 +160,12 @@ circles(deps, cfg) {
     }
     if (!ok) continue;
 
-    // --- 绘制 ---
+    // --- draw ---
     noStroke();
     if (cfg.mono) {
-      fill(accent1);          // 单色：全部用 accent1
+      fill(accent1);          // Mono: use accent1 for all
     } else {
-      fill(random([accent1, accent2]));  // 多色：随机 accent1 / accent2
+      fill(random([accent1, accent2]));  // Multi: random accent1 / accent2
     }
     circle(c.x, c.y, 2 * r);
 
@@ -180,11 +180,11 @@ nested(deps, cfg = {}) {
   const poly = deps.poly;
   const rx = deps.rx || (deps.w ? deps.w * 0.5 : 40);
 
-  // 原来只用 deps.accent1/2，现在加上 cfg 覆盖
+  // Previously used deps.accent1/2; now support cfg overrides
   let accent1 = deps.accent1 || color(0, 0, 0);
   let accent2 = deps.accent2 || color(0, 0, 100);
 
-  // ✅ 允许通过 cfg.accent1 / cfg.accent2 覆盖颜色
+  // Allow overriding colors via cfg.accent1 / cfg.accent2
   if (cfg.accent1) {
     accent1 = color(
       cfg.accent1.h,
@@ -223,11 +223,11 @@ nested(deps, cfg = {}) {
     if (!ok) continue;
 
     noStroke();
-    // 外圈：accent1
+    // Outer circle: accent1
     fill(accent1);
     circle(c.x, c.y, r * 2);
 
-    // 内嵌小圆：accent2
+    // Inner nested circle: accent2
     if (random() < nestProb) {
       fill(accent2);
       const rr = r * random(0.4, 0.6);
@@ -248,7 +248,7 @@ noisyRings(deps, cfg = {}) {
   const center = cfg.center || topPts[floor(topPts.length / 2)];
   noStroke();
 
-  // ✅ 先看 cfg.ringColor，有就用，没有再随机
+  // First check cfg.ringColor; use it if provided, otherwise randomize
   let ringColor;
   if (cfg.ringColor) {
     if (cfg.ringColor instanceof p5.Color) {
@@ -349,23 +349,23 @@ baseTracks(deps, cfg = {}) {
     maxR = max(maxR, p5.Vector.dist(center, p));
   }
 
-  const trackAngleStep   = radians(10);          // 每条轨道的角度间隔
+  const trackAngleStep   = radians(10);          // Angle step for each track
   const angleStart       = PI;
   const angleEnd         = TWO_PI;
-  const circlesPerTrack  = 12;                   // 每条轨道上的点个数
-  const circleDiameter   = maxR * 0.03;          // 点的直径
+  const circlesPerTrack  = 12;                   // Number of points per track
+  const circleDiameter   = maxR * 0.03;          // diameter of points
   const radialStep       = maxR / (circlesPerTrack + 1);
 
-  const useAlt = !!cfg.alt;  // true = 两色交替
+  const useAlt = !!cfg.alt;  // true = alternate between two colors
 
   noStroke();
   push();
 
-  // 默认两种轨迹颜色
+  // Default two track colors
   const c1_default = color(50, 63, 46);
   const c2_default = color(126, 22, 89);
 
-  // ✅ 允许通过 cfg.accent1 / cfg.accent2 覆盖
+  // Allow overriding via cfg.accent1 / cfg.accent2
   let c1 = c1_default;
   let c2 = c2_default;
 
@@ -398,7 +398,7 @@ baseTracks(deps, cfg = {}) {
   let trackIndex = 0;
   for (let angle = angleStart; angle <= angleEnd + 1e-6; angle += trackAngleStep) {
 
-    // 单色：全部用 c1；混色：轨道在 c1 / c2 间交替
+    // Mono: all c1; Alt: tracks alternate between c1 and c2
     const trackColor = useAlt
       ? (trackIndex % 2 === 0 ? c1 : c2)
       : c1;
@@ -417,7 +417,6 @@ baseTracks(deps, cfg = {}) {
 
   pop();
 },
-
 
   // Fpr Stem pattern VORONOI
   // depend on p5.voronoi library
@@ -513,7 +512,7 @@ stemVoronoi(deps, opt = {}) {
   let rawCol = opt.dotColor || deps.accent1 || { h: 116, s: 35, b: 75, a: 100 };
   let dc;
   if (rawCol instanceof p5.Color) {
-    dc = rawCol; 
+    dc = rawCol;
   } else {
     dc = color(
       rawCol.h,
@@ -530,11 +529,11 @@ stemVoronoi(deps, opt = {}) {
 
   for (let k = 0; k < trackCount; k++) {
 
-    // 0~1 的横向参数
+    // Horizontal parameter in [0,1]
     const t = (k + 0.5) / trackCount;
     const x = lerp(bb.minx + marginX, bb.maxx - marginX, t);
 
-    //If the circle is closer to the center -> scale is larger, else smaller  
+    //If the circle is closer to the center -> scale is larger, else smaller
     const centerT = 0.5;
     const dist = abs(t - centerT) / centerT; //center = 0, edge = 1
     const scale = lerp(1.0, edgeScale, dist);
@@ -848,7 +847,6 @@ class Stem {
     push();
     translate(0, this.offsetY * (this.parentScale || 1));
 
-
     const col = color(
       this.baseColor.h != null ? this.baseColor.h : 35,
       this.baseColor.s != null ? this.baseColor.s : 30,
@@ -864,7 +862,6 @@ class Stem {
     ctx.fillStyle = col.toString();
     ctx.fill();
     ctx.restore();
-
 
     //If strokeWidth > 0, draw the stroke
     if (this.strokeWidth > 0) {
@@ -936,7 +933,7 @@ class BasePart {
     this.pattern = spec.pattern || { type: BASE_PART_PATTERN.NONE, opt: {} };
 
     this.bottomRadius = spec.bottomRadius != null ? spec.bottomRadius : 16;
-    this.bottomSag = spec.bottomSag != null ? spec.bottomSag : 0.12; // 下巴下沉稍微大一点
+    this.bottomSag = spec.bottomSag != null ? spec.bottomSag : 0.12; // chin sag slightly larger
     this.bottomTight = spec.bottomTight != null ? spec.bottomTight : 0.18;
     this.sideBulge = spec.sideBulge != null ? spec.sideBulge : 0.66;
     this.topRound = spec.topRound != null ? spec.topRound : 0.96;
@@ -965,10 +962,10 @@ class BasePart {
     const chinDrop = h * sagRatio;
     const chinY    = baseY + chinDrop;
     const midCtrlY = baseY + chinDrop * 0.4;
-    
+
     //record chin center point (center of tracks)
     this.chinCenter = createVector(0, chinY);
-    
+
     ctx.moveTo(-footX, baseY - r);
 
     //"Left ear" to chin
@@ -978,14 +975,14 @@ class BasePart {
       0,             chinY
     );
 
-    // Chin → "Right ear"
+    // Chin "Right ear"
     ctx.bezierCurveTo(
       footX * 0.3,   chinY,
       footX,         midCtrlY,
       footX,         baseY - r
     );
 
-    // Right side → top
+    // Right side top
     ctx.bezierCurveTo(
       sideX,        baseY - h * 0.02,
       sideX,        wideY,
@@ -1016,7 +1013,6 @@ class BasePart {
 
     push();
     translate(0, this.offsetY * (this.parentScale || 1));
-
 
     const col = color(
       this.baseColor.h != null ? this.baseColor.h : 35,
@@ -1085,7 +1081,6 @@ class BasePart {
   }
 }
 
-
 // Mushroom class with Cap, Stem, BasePart, anchor and layout
 class Mushroom {
   constructor(spec) {
@@ -1096,17 +1091,17 @@ class Mushroom {
     this.scale = (this.pose.scale != null) ? this.pose.scale : 1;
     this.rot   = this.pose.rot || 0;
 
-    // 整朵蘑菇的锚点（中心点）
+    // Anchor point for the whole mushroom (center)
     this.anchor = spec.anchor || { x: (this.pose.x || 0), y: (this.pose.y || 0) };
 
-    // 三部分的相对偏移（相对于锚点）
+    // Relative offsets for the three parts (relative to the anchor)
     this.layout = spec.layout || {
       capOffset:  { x: 0,  y: 0   },
       stemOffset: { x: 0,  y: 80  },
       baseOffset: { x: 0,  y: 140 }
     };
 
-    // 如未显式提供绝对坐标，则保持为 null（运行时用“锚点+偏移”）
+    // If absolute positions are not provided, keep null (use anchor + offsets at runtime)
     this.capPos  = spec.capPos  || null;
     this.stemPos = spec.stemPos || null;
     this.basePos = spec.basePos || null;
@@ -1130,7 +1125,7 @@ class Mushroom {
     const offStem = this.layout.stemOffset || { x: 0, y: 80  };
     const offBase = this.layout.baseOffset || { x: 0, y: 140 };
 
-    // 绝对坐标优先，否则用“锚点 + 偏移”
+    // Absolute positions take precedence; otherwise use "anchor + offset"
     const capX  = this.capPos  ? this.capPos.x  : (ax + offCap.x);
     const capY  = this.capPos  ? this.capPos.y  : (ay + offCap.y);
     const stemX = this.stemPos ? this.stemPos.x : (ax + offStem.x);
@@ -1138,7 +1133,7 @@ class Mushroom {
     const baseX = this.basePos ? this.basePos.x : (ax + offBase.x);
     const baseY = this.basePos ? this.basePos.y : (ay + offBase.y);
 
-    // —— Base ——
+    // —Base 
     if (this.base && this.base.visible) {
       push();
       translate(baseX, baseY);
@@ -1149,7 +1144,7 @@ class Mushroom {
       pop();
     }
 
-    // —— Stem ——
+    // —Stem 
     if (this.stem && this.stem.visible) {
       push();
       translate(stemX, stemY);
@@ -1160,7 +1155,7 @@ class Mushroom {
       pop();
     }
 
-    // —— Cap ——
+    // —Cap 
     if (this.cap && this.cap.visible) {
       push();
       translate(capX, capY);
@@ -1172,7 +1167,6 @@ class Mushroom {
     }
   }
 }
-
 
 //Scene class to hold multiple mushrooms and draw them together
 class Scene {
@@ -1198,8 +1192,8 @@ const TYPE_LIBRARY = {
       visible: true,
       h: 480,
       w: 40,
-      // ↓ 往下放一点（数值更接近 0 = 更靠下）
-      offsetY: 70,            // 原 -100
+      // moved down a bit (smaller value = lower)
+      offsetY: 70,            // was -100
       topW: 80,
       bottomW: 150,
       ryTop: 20,
@@ -1224,8 +1218,8 @@ const TYPE_LIBRARY = {
     base: {
       visible: true,
       r: 36,
-      // ↓ 也往下放一些（让伞底离柄顶远一点）
-      offsetY: -20,           // 原 -140
+      // also moved down a bit (increase distance between cap bottom and stem top)
+      offsetY: -20,           // previously -140
       w: 320,
       h: 80,
       bottomRadius: 16,
@@ -1236,7 +1230,7 @@ const TYPE_LIBRARY = {
       baseColor: { h: 50, s: 85, b: 90, a: 100 },
       pattern: { type: BASE_PART_PATTERN.TRACKS_MONO, opt: {} }
     },
-    // 三部分仍共享同一锚点，不做额外 layout 偏移
+    // The three parts still share the same anchor; no extra layout offsets
     layout: {
       capOffset:  { x: 0, y: 0 },
       stemOffset: { x: 0, y: 0 },
@@ -1254,8 +1248,8 @@ const TYPE_LIBRARY = {
       visible: true,
       h: 250,
       w: 40,
-      // ↓ 往下放一点（数值更接近 0 = 更靠下）
-      offsetY: 70,            // 原 -100
+      // moved down a bit (smaller value = lower)
+      offsetY: 70,            // was -100
       topW: 80,
       bottomW: 150,
       ryTop: 20,
@@ -1280,7 +1274,7 @@ const TYPE_LIBRARY = {
     base: {
       visible: false,
     },
-    // 三部分仍共享同一锚点，不做额外 layout 偏移
+    // The three parts still share the same anchor; no extra layout offsets
     layout: {
       capOffset:  { x: 0, y: 0 },
       stemOffset: { x: 0, y: 0 },
@@ -1307,23 +1301,23 @@ const SCENE_LAYOUT = [
     pattern: {
       type: CAP_PATTERN.NESTED,
       opt: {
-        accent1: { h: 44, s: 8, b: 88, a: 100},  // 第一种颜色
-        accent2: { h: 139, s: 94, b: 52, a: 100 }, // 第二种颜色
+        accent1: { h: 44, s: 8, b: 88, a: 100},  // first accent color
+        accent2: { h: 139, s: 94, b: 52, a: 100 }, // second accent color
       }
     }
   },
 
   stemOverride: {
     h: 220,
-    baseColor: { h: 120, s: 80, b: 80, a: 100 },  // 绿色
+    baseColor: { h: 120, s: 80, b: 80, a: 100 },  // green
     offsetY: 110,
     strokeColor:  { h: 132, s: 91, b: 44, a: 100 },
     pattern: {
       type: STEM_PATTERN.VORONOI,
       opt: {
         siteCount: 80,
-        baseColor: { h: 120, s: 80, b: 80, a: 100 },   // 黄色纹理
-        edgeColor: { h: 132, s: 91, b: 44, a: 100 },  // 深绿边线
+        baseColor: { h: 120, s: 80, b: 80, a: 100 },   // yellowish texture
+        edgeColor: { h: 132, s: 91, b: 44, a: 100 },  // dark green edge
         edgeWeight: 1.2
       }
     }
@@ -1345,16 +1339,16 @@ const SCENE_LAYOUT = [
       w: 320,
       archTop: 200,
       archBottom: 100,
-      baseColor: { h: 54, s: 92, b: 89, a: 100 },   // 伞盖颜色
+      baseColor: { h: 54, s: 92, b: 89, a: 100 },   // cap color
       pattern: {
         type: CAP_PATTERN.NOISY_RINGS,
         opt: {
-          ringColor: { h: 183, s: 99, b: 38, a: 100 } 
+          ringColor: { h: 183, s: 99, b: 38, a: 100 }
         }
       }
     },
     stemOverride: {
-      // 不动形状参数（沿用你的）
+      // Keep shape parameters unchanged (use your values)
       h: 380,
       topW: 100,
       bottomW: 200,
@@ -1364,20 +1358,20 @@ const SCENE_LAYOUT = [
 
       baseColor: { h: 0, s: 100, b: 85, a: 100 },
       strokeColor:  { h: 0, s: 100, b: 85, a: 100 },
-      // 图案：竖向白色圆点
+      // Pattern: vertical white dots
       pattern: {
         type: STEM_PATTERN.DOT_TRACKS,
         opt: {
-          trackCount: 11,        // 越大越密，你可以微调
-          rows: 15,             // 纵向点数（可以 14–22 自己调）
-          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // 白色点
-          edgeScale: 0.4,       // 越靠两边点越小
-          jitterY: 2,           // 点位置少量随机抖动
-          baseRadius: 10         // 点的半径基准（中间的点会更大）
+          trackCount: 11,        // Higher = denser, you can tweak
+          rows: 15,             // Number of vertical points (try ~142)
+          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // white dots
+          edgeScale: 0.4,       // dots get smaller toward edges
+          jitterY: 2,           // small random vertical jitter for dots
+          baseRadius: 10        // base radius for dots (center dots larger)
         }
       }
     }
-    
+
   },
 
   {
@@ -1386,18 +1380,18 @@ const SCENE_LAYOUT = [
     seed: 31002,
     anchor: { x: 631, y: 654 },
     pose: { scale: 0.60, rot: 0 },
-    // 改伞顶高度/颜色 
+    // Change cap top height / color
     capOverride: {
-      w: 360,              // 伞盖宽度（可选）
-      archTop: 160,        // ↑ 伞顶更高更圆
-      archBottom: 50,      // 下缘弧度
-      baseColor: { h: 315, s: 45, b: 52, a: 100 }, // 伞盖颜色（HSB）
-      pattern: { 
-        type: CAP_PATTERN.NESTED, 
+      w: 360,              // cap width (optional)
+      archTop: 160,        // cap top higher and rounder
+      archBottom: 50,      // bottom arc curvature
+      baseColor: { h: 315, s: 45, b: 52, a: 100 }, // cap color (HSB)
+      pattern: {
+        type: CAP_PATTERN.NESTED,
         opt: {
-              accent1: { h: 53, s: 93, b: 92, a: 100},  // 第一种颜色
-              accent2: { h: 78, s: 79, b: 74, a: 100 }, // 第二种颜色
-            } // 斑点样式（可选）
+              accent1: { h: 53, s: 93, b: 92, a: 100},  // first color
+              accent2: { h: 78, s: 79, b: 74, a: 100 }, // second color
+            } // spot style (optional)
       }
     },
     stemOverride: {
@@ -1407,19 +1401,19 @@ const SCENE_LAYOUT = [
       ryTop: 26,
       ryBottom: 80,
       bulge: 0.3,
-      baseColor: { h: 70, s: 99, b: 76, a: 100 }, // 柄颜色
+      baseColor: { h: 70, s: 99, b: 76, a: 100 }, // stem color
       pattern: {
       type: STEM_PATTERN.VORONOI,
       opt: {
         siteCount: 80,
-        baseColor: { h: 95, s: 85, b: 75, a: 100 },   // 黄色纹理
-        edgeColor: {  h: 61, s: 85, b: 84  },  // 深绿边线
+        baseColor: { h: 95, s: 85, b: 75, a: 100 },   // yellowish texture
+        edgeColor: {  h: 61, s: 85, b: 84  },  // dark green edge
         edgeWeight: 1.2
       }
     }
     },
     baseOverride: {
-      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // 伞底颜色
+      baseColor: { h: 50, s: 85, b: 90, a: 100 }   // base (underside) color
     }
   },
 
@@ -1431,16 +1425,16 @@ const SCENE_LAYOUT = [
   pose: { scale: 0.45, rot: 0 },
 
   capOverride: {
-    w: 340,              // ← cap 的宽度参数应该是 w
+    w: 340,              // cap width param should be 'w'
     archTop: 230,
     archBottom: 120,
-    baseColor: { h: 168, s: 96, b: 41, a: 100 }, // 伞盖颜色
+    baseColor: { h: 168, s: 96, b: 41, a: 100 }, // cap color
     pattern: {
       type: CAP_PATTERN.CIRCLES_MONO,
-      opt: { 
-        minR: 8, 
+      opt: {
+        minR: 8,
         maxR: 20,
-        accent1: { h: 337, s: 68, b: 85, a: 100 } 
+        accent1: { h: 337, s: 68, b: 85, a: 100 }
       }
     }
   },
@@ -1453,14 +1447,14 @@ const SCENE_LAYOUT = [
     ryTop: 26,
     ryBottom: 30,
     bulge: 0.20,
-    baseColor: { h: 52, s: 80, b: 92, a: 100 },  
+    baseColor: { h: 52, s: 80, b: 92, a: 100 },
     strokeColor:  { h: 52, s: 80, b: 92, a: 100 },
     pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
         trackCount: 9,
         rows: 10,
-        dotColor: { h: 154, s: 77, b: 37, a: 100 },  // 白色点
+        dotColor: { h: 154, s: 77, b: 37, a: 100 },  // white
         edgeScale: 0.5,
         jitterY: 2,
         baseRadius: 6
@@ -1470,7 +1464,6 @@ const SCENE_LAYOUT = [
 
 }
 ,
-
 
   {
     id: "m_cluster1",
@@ -1482,7 +1475,7 @@ const SCENE_LAYOUT = [
       w: 260,
       archTop: 200,
       archBottom: 60,
-      baseColor: { h: 357, s: 99, b: 75, a: 100 },  // 伞盖颜色
+      baseColor: { h: 357, s: 99, b: 75, a: 100 },  // cap color
       pattern: {
         type: CAP_PATTERN.CIRCLES_MONO,
         opt: {
@@ -1499,18 +1492,18 @@ const SCENE_LAYOUT = [
       ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 343, s: 58, b: 64, a: 100 },  // 柄颜色
+      baseColor: { h: 343, s: 58, b: 64, a: 100 },  // stem color
       strokeColor:  { h: 343, s: 58, b: 64, a: 100 },
       pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
-        trackCount: 11,                            // 竖向轨道数量
-        rows: 15,                                 // 每条轨道上的点数
-        marginX: 5,                              // 横向留白
-        jitterY: 2,                               // 轻微竖向抖动
-        edgeScale: 0.3,                           // 越靠边越小
-        baseRadius: 10,                            // 中央点半径基准
-        dotColor: { h: 348, s: 76, b: 60, a: 100 }  
+        trackCount: 9,                            // number of vertical tracks
+        rows: 18,                                 // points per track
+        marginX: 5,                               // horizontal margin
+        jitterY: 2,                               // small vertical jitter
+        edgeScale: 0.3,                           // dots get smaller toward edges
+        baseRadius: 11,                           // base radius for center dots
+        dotColor: { h: 348, s: 76, b: 60, a: 100 }
       }
     }
     },
@@ -1526,12 +1519,12 @@ const SCENE_LAYOUT = [
       w: 400,
       archTop: 280,
       archBottom: 60,
-      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
+      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // cap color
       pattern: {
         type: CAP_PATTERN.NESTED,
-        opt: { 
-          accent1: { h: 356, s: 99, b: 79, a: 100 },  //第一种颜色
-          accent2: { h: 52, s: 99, b: 92, a: 100 }, // 第二种颜色
+        opt: {
+          accent1: { h: 356, s: 99, b: 79, a: 100 },  // first accent color
+          accent2: { h: 52, s: 99, b: 92, a: 100 }, // second accent color
           maxCount: 100,
           maxR: 40,
           minR: 10,
@@ -1545,18 +1538,18 @@ const SCENE_LAYOUT = [
       ryTop: 22,
       ryBottom: 100,
       bulge: 0.3,
-      baseColor: { h: 53, s: 97, b: 91, a: 100 },  // 柄颜色
+      baseColor: { h: 53, s: 97, b: 91, a: 100 },  // stem color
       strokeColor:  { h: 53, s: 97, b: 91, a: 100 },
       pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
-        trackCount: 9,                            // 竖向轨道数量
-        rows: 18,                                 // 每条轨道上的点数
-        marginX: 5,                              // 横向留白
-        jitterY: 2,                               // 轻微竖向抖动
-        edgeScale: 0.3,                           // 越靠边越小
-        baseRadius: 11,                            // 中央点半径基准
-        dotColor: { h: 348, s: 54, b: 57, a: 100 }  
+        trackCount: 11,                            // number of vertical tracks
+        rows: 15,                                 // points per track
+        marginX: 5,                               // horizontal margin
+        jitterY: 2,                               // small vertical jitter
+        edgeScale: 0.4,                            // dots get smaller toward edges
+        baseRadius: 10,                           // base radius for dots (center dots larger)
+        dotColor: { h: 348, s: 54, b: 57, a: 100 }
       }
     }
     },
@@ -1572,12 +1565,12 @@ const SCENE_LAYOUT = [
       w: 280,
       archTop: 180,
       archBottom: 50,
-      baseColor: { h: 355, s: 99, b: 74, a: 100 },  // 伞盖颜色
+      baseColor: { h: 355, s: 99, b: 74, a: 100 },  // cap color
       pattern: {
         type: CAP_PATTERN.NESTED,
-        opt: { 
-          accent1: { h: 341, s: 90, b: 35, a: 100 },  // 第一种颜色
-          accent2: { h: 318, s: 55, b: 47, a: 100 }, // 第二种颜色1
+        opt: {
+          accent1: { h: 341, s: 90, b: 35, a: 100 },  // first accent color
+          accent2: { h: 318, s: 55, b: 47, a: 100 }, // second accent color
           maxCount: 25,
           maxR: 30,
           minR: 10,
@@ -1591,18 +1584,18 @@ const SCENE_LAYOUT = [
       ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 27, s: 12, b: 93, a: 100 },  // 柄颜色
+      baseColor: { h: 27, s: 12, b: 93, a: 100 },  // stem color
       strokeColor:  { h: 27, s: 12, b: 93, a: 100 },
       pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
-        trackCount: 9,                            // 竖向轨道数量
-        rows: 12,                                 // 每条轨道上的点数
-        marginX: 5,                              // 横向留白
-        jitterY: 2,                               // 轻微竖向抖动
-        edgeScale: 0.3,                           // 越靠边越小
-        baseRadius: 10,                            // 中央点半径基准
-        dotColor: { h: 356, s: 92, b: 73, a: 100 }  
+        trackCount: 9,                            // number of vertical tracks
+        rows: 12,                                 // points per track
+        marginX: 5,                              // horizontal margin
+        jitterY: 2,                               // small vertical jitter
+        edgeScale: 0.3,                           // dots get smaller toward edges
+        baseRadius: 10,                            // base radius for center dots
+        dotColor: { h: 356, s: 92, b: 73, a: 100 }
       }
     }
     },
@@ -1622,7 +1615,7 @@ const SCENE_LAYOUT = [
     baseColor: { h: 163, s: 89, b: 34, a: 100 },
     pattern: {
       type: CAP_PATTERN.NOISY_RINGS,
-      opt: { 
+      opt: {
         ringCountRange: [10, 15],
         ringColor: { h: 56, s: 99, b: 80, a: 100 }
       }
@@ -1630,17 +1623,17 @@ const SCENE_LAYOUT = [
   },
 
   stemOverride: {
-    baseColor: { h: 0, s: 0, b: 100, a: 100 },  // 白底
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },  // white base
     strokeColor:  { h: 0, s: 0, b: 100, a: 100 },
     h: 360,
     bottomW: 180,
     pattern: {
       type: STEM_PATTERN.DOT_GRADIENT,
       opt: {
-        minR: 3,                      // 最小半径
-        maxR: 10,                     // 最大半径
-        dotColor: { h: 205, s: 85, b: 70, a: 100 },   // 深蓝点
-        maxCount: 150                 // 控制点的密度（可调）
+        minR: 3,                      // min radius
+        maxR: 10,                     // max radius
+        dotColor: { h: 205, s: 85, b: 70, a: 100 },   // dark blue
+        maxCount: 150                 // controls point density (adjustable)
       }
     }
   }
@@ -1656,13 +1649,13 @@ const SCENE_LAYOUT = [
       w: 320,
       archTop: 220,
       archBottom: 80,
-      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // 伞盖颜色
+      baseColor: { h: 38, s: 12, b: 90, a: 100 },  // cap color
       pattern: {
         type: CAP_PATTERN.NOISY_RINGS,
-        opt: { 
+        opt: {
           ringCountRange: [10, 15] ,
           ringColor: { h: 337, s: 71, b: 43, a: 100 }
-          
+
         }
       }
     },
@@ -1673,18 +1666,18 @@ const SCENE_LAYOUT = [
       ryTop: 22,
       ryBottom: 70,
       bulge: 0.3,
-      baseColor: { h: 0, s: 100, b: 85, a: 100 },  // 柄颜色
+      baseColor: { h: 0, s: 100, b: 85, a: 100 },  // stem color
       strokeColor:  { h: 0, s: 100, b: 85, a: 100 },
       pattern: {
         type: STEM_PATTERN.DOT_TRACKS,
         opt: {
-          trackCount: 11,        // 越大越密，你可以微调
-          rows: 15,             // 纵向点数（可以 14–22 自己调）
-          marginX: 10,      // 横向留白
-          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // 白色点
-          edgeScale: 0.4,       // 越靠两边点越小
-          jitterY: 2,           // 点位置少量随机抖动
-          baseRadius: 10         // 点的半径基准（中间的点会更大）
+          trackCount: 11,        // higher = denser, tweakable
+          rows: 15,             // vertical points (try ~14–22)
+          marginX: 10,      // horizontal margin
+          dotColor: { h: 0, s: 0, b: 100, a: 100 },  // white
+          edgeScale: 0.4,       // dots get smaller toward edges
+          jitterY: 2,           // small random jitter in dot positions
+          baseRadius: 10         // base radius for dots (center dots larger)
         }
       }
     },
@@ -1701,13 +1694,13 @@ const SCENE_LAYOUT = [
     w: 340,
     archTop: 120,
     archBottom: 50,
-    baseColor: { h: 359, s: 90, b: 80, a: 100 }, // 伞盖红色
+    baseColor: { h: 359, s: 90, b: 80, a: 100 }, // cap red
     pattern: {
       type: CAP_PATTERN.CIRCLES_MULTI,
-      opt: { 
-        accent1: { h: 40, s: 6, b: 89, a: 100 },  // 第一种颜色
-        accent2: { h: 75, s: 66, b: 80, a: 100 }, // 第二种颜色
-        minR: 6,  
+      opt: {
+        accent1: { h: 40, s: 6, b: 89, a: 100 },  // first accent color
+        accent2: { h: 75, s: 66, b: 80, a: 100 }, // second accent color
+        minR: 6,
         maxR: 14
        }
     }
@@ -1719,33 +1712,33 @@ const SCENE_LAYOUT = [
     ryTop: 24,
     ryBottom: 40,
     bulge: 0.24,
-    baseColor: { h: 0, s: 0, b: 100, a: 100 }, 
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },
     strokeColor:  { h: 0, s: 0, b: 100, a: 100 },
     offsetY: 130,
     pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
-        trackCount: 5,                            // 竖向轨道数量
-        rows: 12,                                 // 每条轨道上的点数
-        marginX: 5,                              // 横向留白
-        jitterY: 2,                               // 轻微竖向抖动
-        edgeScale: 0.3,                           // 越靠边越小
-        baseRadius: 8,                            // 中央点半径基准
-        dotColor: { h: 0, s: 80, b: 80, a: 100 }  
+        trackCount: 5,                            // number of vertical tracks
+        rows: 12,                                 // points per track
+        marginX: 5,                              // horizontal margin
+        jitterY: 2,                               // small vertical jitter
+        edgeScale: 0.3,                           // dots get smaller toward edges
+        baseRadius: 8,                            // base radius for center dots
+        dotColor: { h: 0, s: 80, b: 80, a: 100 }
       }
     }
   },
 
-  // 🟡 伞底：浅黄绿底 + 两色混合轨道
+  // 🟡 Base: light yellow-green underside + two-color mixed tracks
   baseOverride: {
-    baseColor: { h: 68, s: 56, b: 84, a: 100 },   // 浅黄绿色伞底
+    baseColor: { h: 68, s: 56, b: 84, a: 100 },   // light yellow-green base (underside)
 
-    // 使用 TRACKS_ALT + 两种自定义颜色
+    // use TRACKS_ALT + two custom colors
     pattern: {
       type: BASE_PART_PATTERN.TRACKS_ALT,
       opt: {
-        accent1: { h: 0, s: 61, b: 42, a: 100 }, // 偏深的绿点
-        accent2: { h: 46, s: 11, b: 91, a: 100 }  // 偏橙棕色点
+        accent1: { h: 0, s: 61, b: 42, a: 100 }, // darker green
+        accent2: { h: 46, s: 11, b: 91, a: 100 }  // slightly orange-brown
       }
     }
   }
@@ -1757,22 +1750,22 @@ const SCENE_LAYOUT = [
   type: "default",
   seed: 31005,
   anchor: { x: 1054, y: 112 },
-  pose: { scale: 0.40, rot: 45 }, // 没有 angleMode(DEGREES) 就是 20 弧度
+  pose: { scale: 0.40, rot: 45 }, // Note: rot is in radians by default (unless angleMode(DEGREES) is set)
 
   capOverride: {
     w: 350,
     archTop: 140,
     archBottom: 50,
-    baseColor: { h: 201, s: 99, b: 69, a: 100 }, // 蓝色伞盖
+    baseColor: { h: 201, s: 99, b: 69, a: 100 }, // blue cap
     offsetY: -20,
     pattern: {
       type: CAP_PATTERN.CIRCLES_MONO,
       opt: {
-        minR: 6,         // 圆点最小半径
-        maxR: 20,        // 圆点最大半径（大圆）
-        maxCount: 110,   // 圆点个数
-        gap: 6,          // 点之间的最小间距（避免太挤）
-        accent1: { h: 0, s: 0, b: 100, a: 100 }  // 白色圆点
+        minR: 6,         // min dot radius
+        maxR: 20,        // max dot radius (large circles)
+        maxCount: 110,   // number of dots
+        gap: 6,          // minimum spacing between dots (avoid crowding)
+        accent1: { h: 0, s: 0, b: 100, a: 100 }  // white dots
       }
     }
   },
@@ -1790,24 +1783,24 @@ const SCENE_LAYOUT = [
     pattern: {
       type: STEM_PATTERN.DOT_TRACKS,
       opt: {
-        trackCount: 7,                             // 竖向点轨道数量
-        rows: 15,                                  // 每条轨道上的点数
-        baseRadius: 6,                             // 中间一列点的基础半径
-        edgeScale: 0.3,                            // 越靠边越小
-        jitterY: 2,                                // 纵向轻微抖动
-        dotColor: { h: 201, s: 99, b: 69, a: 100 } // 蓝色点
+        trackCount: 7,                             // number of vertical tracks
+        rows: 15,                                  // points per track
+        baseRadius: 6,                             // base radius for middle column of dots
+        edgeScale: 0.3,                            // dots get smaller toward edges
+        jitterY: 2,                                // small vertical jitter
+        dotColor: { h: 201, s: 99, b: 69, a: 100 } // blue
       }
     }
   },
 
   baseOverride: {
-    baseColor: { h: 0, s: 0, b: 100, a: 100 },    // 白色伞底
+    baseColor: { h: 0, s: 0, b: 100, a: 100 },    // white underside
 
     pattern: {
       type: BASE_PART_PATTERN.TRACKS_ALT,
       opt: {
-        accent1: { h: 201, s: 40, b: 95, a: 100 }, // 浅蓝色小点
-        accent2: { h: 250, s: 9, b: 71, a: 100 } // 白色底色
+        accent1: { h: 201, s: 40, b: 95, a: 100 }, // light blue (small)
+        accent2: { h: 250, s: 9, b: 71, a: 100 } // white base color
       }
     }
   }
@@ -1827,7 +1820,7 @@ function makeMushroomFromLayout(layout) {
   const mergedStem = Object.assign({}, typeSpec.stem || {}, layout.stemOverride || {});
   const mergedBase = Object.assign({}, typeSpec.base || {}, layout.baseOverride || {});
   const mergedLayout = Object.assign(
-    { 
+    {
       capOffset:  { x: 0, y: 0 },
       stemOffset: { x: 0, y: 80 },
       baseOffset: { x: 0, y: 150 }
