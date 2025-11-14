@@ -730,7 +730,8 @@ class Stem {
     if (!this.visible) return;
 
     push();
-    translate(0, this.offsetY);
+    translate(0, this.offsetY * (this.parentScale || 1));
+
 
     const col = color(
       this.baseColor.h != null ? this.baseColor.h : 35,
@@ -898,7 +899,8 @@ class BasePart {
     if (!this.visible) return;
 
     push();
-    translate(0, this.offsetY);
+    translate(0, this.offsetY * (this.parentScale || 1));
+
 
     const col = color(
       this.baseColor.h != null ? this.baseColor.h : 35,
@@ -971,37 +973,27 @@ class BasePart {
 // Mushroom class with Cap, Stem, BasePart, anchor and layout
 class Mushroom {
   constructor(spec) {
-    this.id = spec.id || "m";
-    this.seed = spec.seed != null ? spec.seed : Math.floor(Math.random() * 1e9);
+    this.id   = spec.id || "m";
+    this.seed = (spec.seed != null) ? spec.seed : Math.floor(Math.random() * 1e9);
 
-    this.pose = spec.pose || {};
-    this.scale = this.pose.scale != null ? this.pose.scale : 1;
-    this.rot = this.pose.rot || 0;
+    this.pose  = spec.pose || {};
+    this.scale = (this.pose.scale != null) ? this.pose.scale : 1;
+    this.rot   = this.pose.rot || 0;
 
-    this.anchor = spec.anchor || { x: this.pose.x || 0, y: this.pose.y || 0 };
+    // 整朵蘑菇的锚点（中心点）
+    this.anchor = spec.anchor || { x: (this.pose.x || 0), y: (this.pose.y || 0) };
 
+    // 三部分的相对偏移（相对于锚点）
     this.layout = spec.layout || {
-      capOffset:  { x: 0,  y: 0 },
-      stemOffset: { x: 0,  y: 80 },
+      capOffset:  { x: 0,  y: 0   },
+      stemOffset: { x: 0,  y: 80  },
       baseOffset: { x: 0,  y: 140 }
     };
 
-    const autoCapPos = {
-      x: this.anchor.x + (this.layout.capOffset?.x || 0),
-      y: this.anchor.y + (this.layout.capOffset?.y || 0)
-    };
-    const autoStemPos = {
-      x: this.anchor.x + (this.layout.stemOffset?.x || 0),
-      y: this.anchor.y + (this.layout.stemOffset?.y || 0)
-    };
-    const autoBasePos = {
-      x: this.anchor.x + (this.layout.baseOffset?.x || 0),
-      y: this.anchor.y + (this.layout.baseOffset?.y || 0)
-    };
-
-    this.capPos  = spec.capPos  || autoCapPos;
-    this.stemPos = spec.stemPos || autoStemPos;
-    this.basePos = spec.basePos || autoBasePos;
+    // 如未显式提供绝对坐标，则保持为 null（运行时用“锚点+偏移”）
+    this.capPos  = spec.capPos  || null;
+    this.stemPos = spec.stemPos || null;
+    this.basePos = spec.basePos || null;
 
     this.cap  = new Cap(spec.cap || {});
     this.stem = new Stem(spec.stem || {});
@@ -1015,29 +1007,50 @@ class Mushroom {
     const s = this.scale;
     const r = this.rot;
 
+    const ax = this.anchor.x;
+    const ay = this.anchor.y;
+
+    const offCap  = this.layout.capOffset  || { x: 0, y: 0   };
+    const offStem = this.layout.stemOffset || { x: 0, y: 80  };
+    const offBase = this.layout.baseOffset || { x: 0, y: 140 };
+
+    // 绝对坐标优先，否则用“锚点 + 偏移”
+    const capX  = this.capPos  ? this.capPos.x  : (ax + offCap.x);
+    const capY  = this.capPos  ? this.capPos.y  : (ay + offCap.y);
+    const stemX = this.stemPos ? this.stemPos.x : (ax + offStem.x);
+    const stemY = this.stemPos ? this.stemPos.y : (ay + offStem.y);
+    const baseX = this.basePos ? this.basePos.x : (ax + offBase.x);
+    const baseY = this.basePos ? this.basePos.y : (ay + offBase.y);
+
+    // —— Base ——
     if (this.base && this.base.visible) {
       push();
-      translate(this.basePos.x, this.basePos.y);
+      translate(baseX, baseY);
       rotate(r);
       scale(s);
+      this.base.parentScale = s;
       this.base.draw();
       pop();
     }
-    
+
+    // —— Stem ——
     if (this.stem && this.stem.visible) {
       push();
-      translate(this.stemPos.x, this.stemPos.y);
+      translate(stemX, stemY);
       rotate(r);
       scale(s);
+      this.stem.parentScale = s;
       this.stem.draw();
       pop();
     }
 
+    // —— Cap ——
     if (this.cap && this.cap.visible) {
       push();
-      translate(this.capPos.x, this.capPos.y);
+      translate(capX, capY);
       rotate(r);
       scale(s);
+      this.cap.parentScale = s;
       this.cap.draw();
       pop();
     }
@@ -1069,7 +1082,8 @@ const TYPE_LIBRARY = {
       visible: true,
       h: 480,
       w: 40,
-      offsetY: -60,
+      // ↓ 往下放一点（数值更接近 0 = 更靠下）
+      offsetY: 70,            // 原 -100
       topW: 80,
       bottomW: 150,
       ryTop: 20,
@@ -1078,81 +1092,122 @@ const TYPE_LIBRARY = {
       baseColor: { h: 116, s: 35, b: 75, a: 100 },
       strokeWidth: 5,
       strokeColor: { h: 116, s: 35, b: 75, a: 100 },
-      // Here we can change different STEM pattern:
-      /*
-      // 1) Voronoi 
       pattern: {
-        type: STEM_PATTERN.VORONOI,
+        type: STEM_PATTERN.DOT_GRADIENT,
         opt: {
-          siteCount: 90,
-          baseColor: { h: 110, s: 60, b: 70, a: 100 },
-          edgeColor: { h: 110, s: 60, b: 90, a: 100 },
-          edgeWeight: 1.8,
-          noiseFreq: 0.02,
-          satRange: 12,
-          briRange: 12
+          maxCount: 220,
+          tries: 1500,
+          minR: 3,
+          maxR: 10,
+          jitterScale: 0.15,
+          gap: 1.5,
+          dotColor: { h: 110, s: 60, b: 90, a: 100 }
         }
       }
-      */  
-      /*
-      // 2) Dot Tracks
-       pattern: {
-         type: STEM_PATTERN.DOT_TRACKS,
-         opt: {
-           trackCount: 18,
-           rows: 30,
-           marginX: 8,
-           baseRadius: 4,
-           edgeScale: 0.3,
-           jitterY: 2,
-           dotColor: { h: 110, s: 60, b: 90, a: 100 }
-         }
-       }
-      */
-      // 3) Dot Gradient
-       pattern: {
-         type: STEM_PATTERN.DOT_GRADIENT,
-         opt: {
-           maxCount: 220,
-           tries: 1500,
-           minR: 3,
-           maxR: 10,
-           jitterScale: 0.15,
-           gap: 1.5,
-           dotColor: { h: 110, s: 60, b: 90, a: 100 }
-         }
-       }
     },
     base: {
       visible: true,
       r: 36,
-      offsetY: -175,
+      // ↓ 也往下放一些（让伞底离柄顶远一点）
+      offsetY: -20,           // 原 -140
       w: 320,
       h: 80,
       bottomRadius: 16,
-      bottomSag: 0.9,
+      bottomSag: 0.90,
       bottomTight: 0.18,
       sideBulge: 0.66,
       topRound: 0.96,
       baseColor: { h: 50, s: 85, b: 90, a: 100 },
       pattern: { type: BASE_PART_PATTERN.TRACKS_MONO, opt: {} }
     },
+    // 三部分仍共享同一锚点，不做额外 layout 偏移
     layout: {
-      capOffset:  { x: 0,   y: -15 },
-      stemOffset: { x: 0,   y: 80  },
-      baseOffset: { x: 0,   y: 150 }
+      capOffset:  { x: 0, y: 0 },
+      stemOffset: { x: 0, y: 0 },
+      baseOffset: { x: 0, y: 0 }
     }
   }
 };
 
 // Scene layout definition array to instantiate mushrooms
 const SCENE_LAYOUT = [
+  // === 固定画布 1200×880 下的七朵小蘑菇 ===
   {
-    id: "m1",
+    id: "m_midY",
     type: "red_amanita",
-    seed: 1234,
-    anchor: { x: 600, y: 200 },
-    pose: { scale: 1.0, rot: 0 }
+    seed: 31002,
+    anchor: { x: 631, y: 654 },
+    pose: { scale: 0.60, rot: 0 },
+    // 中间这朵：整体偏粗偏长
+    stemOverride: {
+      h: 500, topW: 80, bottomW: 170, ryTop: 26, ryBottom: 66, bulge: 0.3
+    }
+  },
+  {
+    id: "m_purple",
+    type: "red_amanita",
+    seed: 31003,
+    anchor: { x: 844, y: 363 },
+    pose: { scale: 0.45, rot: 0 },
+    // 右上紫点：柄短细一点
+    stemOverride: {
+      h: 300, topW: 100, bottomW: 160, ryTop: 26, ryBottom: 48, bulge: 0.20
+    }
+  },
+  {
+    id: "m_redR",
+    type: "red_amanita",
+    seed: 31004,
+    anchor: { x: 1034, y: 470 },
+    pose: { scale: 0.50, rot: Math.PI / 4.5 },
+    // 右侧红伞：中等长度，略鼓
+    stemOverride: {
+      h: 350, topW: 90, bottomW: 150, ryTop: 24, ryBottom: 58, bulge: 0.24
+    }
+  },
+  {
+    id: "m_blueTop",
+    type: "red_amanita",
+    seed: 31005,
+    anchor: { x: 1054, y: 112 },
+    pose: { scale: 0.40, rot: 20 }, // 20 度（单位：度）
+    // 右上蓝白：更细更短，显得轻
+    stemOverride: {
+      h: 300, topW: 70, bottomW: 110, ryTop: 20, ryBottom: 44, bulge: 0.18
+    }
+  },
+  {
+    id: "m_cluster",
+    type: "red_amanita",
+    seed: 31006,
+    anchor: { x: 898, y: 756 },
+    pose: { scale: 0.35, rot: 0 },
+    // 右下小簇中心：最短最细
+    stemOverride: {
+      h: 500, topW: 100, bottomW: 200, ryTop: 22, ryBottom: 70, bulge: 0.3
+    }
+  },
+  {
+    id: "m_greenL",
+    type: "red_amanita",
+    seed: 31007,
+    anchor: { x: 184, y: 597 },
+    pose: { scale: 0.50, rot: 0 },
+    // 左侧绿色：中长偏粗
+    stemOverride: {
+      h: 300, topW: 96, bottomW: 165, ryTop: 24, ryBottom: 60, bulge: 0.26
+    }
+  },
+  {
+    id: "m_smallBL",
+    type: "red_amanita",
+    seed: 31008,
+    anchor: { x: 244, y: 811 },
+    pose: { scale: 0.40, rot: 0 },
+    // 左下小个：矮胖一点
+    stemOverride: {
+      h: 260, topW: 100, bottomW: 200, ryTop: 24, ryBottom: 60, bulge: 0.30
+    }
   }
 ];
 
@@ -1192,7 +1247,7 @@ function makeMushroomFromLayout(layout) {
 }
 
 function setup() {
-  createCanvas(1200, 880);
+  createCanvas(1200, 1000);
   pixelDensity(2);
   colorMode(HSB, 360, 100, 100, 100);
   noLoop();
