@@ -6,13 +6,14 @@ let mushrooms = [];
 // ================== 背景（来源：第一份代码） ==================
 
 function buildBackground() {
-  maxWidth = 1200;
-  maxHeight = 1000;
+  maxWidth = windowWidth;
+  maxHeight = windowHeight;
 
   stroke("#BC7653");
   strokeWeight(1);
   randomSeed(1);
 
+  createCanvas(maxWidth, maxHeight);
   bg = createGraphics(maxWidth, maxHeight);
   bg.background("#070C08");
 
@@ -2477,23 +2478,23 @@ function draw() {
   image(bg, 0, 0);
 
   // 2. 大蘑菇（放在中下方，略缩小）
- push();
+  push();
 
-// ---- 大蘑菇整体位置 ----
-translate(width * 0.35, height * 0.75);  
+  // ---- 大蘑菇整体位置 ----
+  translate(width * 0.35, height * 0.75);  
 
-// ---- 大蘑菇旋转角度（单位：弧度）----
+  // ---- 大蘑菇旋转角度（单位：弧度）----
 
-rotate(radians(-7));      
+  rotate(radians(-7));      
 
-// ---- 大蘑菇缩放 ----
-scale(0.7);
+  // ---- 大蘑菇缩放 ----
+  scale(0.7);
 
-// ---- 大蘑菇本体 ----
-drawStemUniform();
-drawCapReplica(0, -650, 880, 360);
+  // ---- 大蘑菇本体 ----
+  drawStemUniform();
+  drawCapReplica(0, -650, 880, 360);
 
-pop();
+  pop();
 
 
 
@@ -2509,4 +2510,6 @@ function windowResized() {
   max_height = windowHeight;
   max_width = windowWidth;
   resizeCanvas(windowWidth, windowHeight);
+  buildBackground();
+  redraw();
 }
