@@ -2,10 +2,13 @@
 let maxWidth, maxHeight;
 let bg;           // 背景用的 graphics buffer
 let mushrooms = [];
+const DESIGN_W = 1200;  // 设计稿宽度
+const DESIGN_H = 1000;  // 设计稿高度
 
 // ================== 背景（来源：第一份代码） ==================
 
 function buildBackground() {
+  
   maxWidth = windowWidth;
   maxHeight = windowHeight;
 
@@ -13,7 +16,6 @@ function buildBackground() {
   strokeWeight(1);
   randomSeed(1);
 
-  createCanvas(maxWidth, maxHeight);
   bg = createGraphics(maxWidth, maxHeight);
   bg.background("#070C08");
 
@@ -2459,7 +2461,7 @@ function drawStemUniform() {
 // ================== setup / draw ==================
 
 function setup() {
-  createCanvas(1200, 1000);
+  createCanvas(windowWidth, windowHeight);
   pixelDensity(2);
   colorMode(HSB, 360, 100, 100, 100);
   noLoop();
@@ -2473,43 +2475,48 @@ function setup() {
   }
 }
 
+
+
 function draw() {
-  // 1. 背景
-  image(bg, 0, 0);
+  // ========= 0. 背景永远铺满整个窗口 =========
+  image(bg, 0, 0, width, height);  // ✅ 关键：不受后面的 scale 影响
 
-  // 2. 大蘑菇（放在中下方，略缩小）
+  // ========= 1. 计算蘑菇场景的缩放 =========
+  const sx = width  / DESIGN_W;
+  const sy = height / DESIGN_H;
+  const s  = min(sx, sy);  // 等比缩放
+
+  // 为了让 1200×1000 的“场景”居中
+  const offsetX = (width  - DESIGN_W * s) / 2;
+  const offsetY = (height - DESIGN_H * s) / 2;
+
+  // ========= 2. 在缩放后的坐标系里画蘑菇 =========
   push();
+  translate(offsetX, offsetY);
+  scale(s);
 
-  // ---- 大蘑菇整体位置 ----
-  translate(width * 0.35, height * 0.75);  
-
-  // ---- 大蘑菇旋转角度（单位：弧度）----
-
-  rotate(radians(-7));      
-
-  // ---- 大蘑菇缩放 ----
+  // 2.1 大蘑菇（用设计稿坐标）
+  push();
+  translate(DESIGN_W * 0.35, DESIGN_H * 0.75);
+  rotate(radians(-7));
   scale(0.7);
-
-  // ---- 大蘑菇本体 ----
   drawStemUniform();
   drawCapReplica(0, -650, 880, 360);
-
   pop();
 
-
-
-  // 3. 小蘑菇阵列
+  // 2.2 小蘑菇（你原来的 SCENE_LAYOUT 坐标）
   for (const m of mushrooms) {
     m.draw();
   }
+
+  pop();
 }
 
-
-//fix window resize
 function windowResized() {
-  max_height = windowHeight;
-  max_width = windowWidth;
   resizeCanvas(windowWidth, windowHeight);
-  buildBackground();
+  buildBackground(); // 重新做一次满屏背景
   redraw();
 }
+
+
+
