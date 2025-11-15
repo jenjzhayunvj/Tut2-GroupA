@@ -44,7 +44,7 @@ function withClip(areaPathFn, painterFn) {
   ctx.restore();
 }
 
-//It calculates the smallest rectangle that completely encloses a polygon
+//Calculate the smallest rectangle that completely encloses a polygon
 function boundingBox(poly) {
   let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
   for (const p of poly) {
@@ -334,7 +334,6 @@ noisyRings(deps, cfg = {}) {
 }
 ,
 
-  //For Base patterns TRACKS_MONO and TRACKS_ALT
 // For Base patterns TRACKS_MONO and TRACKS_ALT
 baseTracks(deps, cfg = {}) {
   const poly = deps.poly;
