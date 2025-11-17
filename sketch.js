@@ -5,6 +5,8 @@ const DESIGN_W = 1200;  // design canvas width
 const DESIGN_H = 1000;  // design canvas height
 
 // ================== Background ==================
+// Reference: https://editor.p5js.org/yetiblue/sketches/2LuMOM0bl
+// This triangular pattern was the basis for the background code
 
 function buildBackground() {
   
